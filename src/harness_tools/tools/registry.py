@@ -13,10 +13,7 @@ from harness_tools.models import ToolDef, ToolResult
 
 
 def _parse_docstring(docstring: str | None) -> tuple[str, dict[str, str]]:
-    """Extrait la description générale et les descriptions des paramètres d'une docstring.
-    
-    Supporte les formats Google style (Args:) et Sphinx (:param x:).
-    """
+    """Extrait la description générale et les descriptions des paramètres d'une docstring au format Google (Args:)."""
     if not docstring:
         return "", {}
 
@@ -27,21 +24,12 @@ def _parse_docstring(docstring: str | None) -> tuple[str, dict[str, str]]:
     current_section: str | None = None
     current_param: str | None = None
 
-    google_arg_pattern = re.compile(r"^(\w+)(?:\s*\([^)]+\))?\s*:\s*(.*)$")
-    sphinx_param_pattern = re.compile(r"^:param\s+(\w+)\s*:\s*(.*)$")
+    arg_pattern = re.compile(r"^(\w+)(?:\s*\([^)]+\))?\s*:\s*(.*)$")
 
     for line in lines:
         stripped = line.strip()
-        
-        # Détection Sphinx
-        sphinx_match = sphinx_param_pattern.match(stripped)
-        if sphinx_match:
-            current_section = "params"
-            current_param = sphinx_match.group(1)
-            param_docs[current_param] = sphinx_match.group(2).strip()
-            continue
 
-        # Détection Google style
+        # Détection de l'en-tête de section (Google style)
         if stripped.lower() in ("args:", "arguments:", "parameters:"):
             current_section = "params"
             current_param = None
@@ -52,12 +40,12 @@ def _parse_docstring(docstring: str | None) -> tuple[str, dict[str, str]]:
             continue
 
         if current_section == "params":
-            arg_match = google_arg_pattern.match(stripped)
+            arg_match = arg_pattern.match(stripped)
             if arg_match:
                 current_param = arg_match.group(1)
                 param_docs[current_param] = arg_match.group(2).strip()
             elif current_param and (line.startswith("    ") or line.startswith("\t") or line.startswith("  ")):
-                # Ligne de continuation de la description du paramètre
+                # Ligne de continuation indentée pour la description du paramètre
                 param_docs[current_param] += " " + stripped
         elif current_section is None:
             main_desc_lines.append(line)
