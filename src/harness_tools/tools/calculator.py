@@ -1,4 +1,4 @@
-"""Outil Calculatrice sécurisée par analyseur syntaxique AST (sans eval arbitraire)."""
+"""Outil Calculatrice arithmétique sécurisée par AST."""
 
 from __future__ import annotations
 
@@ -20,28 +20,16 @@ _OPERATORS: dict[type[ast.AST], Callable[..., Any]] = {
     ast.UAdd: operator.pos,
 }
 
-# Fonctions mathématiques autorisées
+# Fonctions basiques nécessaires pour un assistant
 _SAFE_FUNCTIONS: dict[str, Callable[..., Any]] = {
     "abs": abs,
     "round": round,
-    "min": min,
-    "max": max,
     "sqrt": math.sqrt,
-    "pow": math.pow,
-    "log": math.log,
-    "exp": math.exp,
-    "ceil": math.ceil,
-    "floor": math.floor,
-}
-
-_SAFE_CONSTANTS: dict[str, float] = {
-    "pi": math.pi,
-    "e": math.e,
 }
 
 
 def _eval_node(node: ast.AST) -> float | int:
-    """Évalue récursivement un nœud de l'arbre syntaxique abstrait."""
+    """Évalue récursivement un nœud arithmétique de l'arbre syntaxique."""
     if isinstance(node, ast.Constant):
         if isinstance(node.value, (int, float)):
             return node.value
@@ -50,48 +38,39 @@ def _eval_node(node: ast.AST) -> float | int:
     elif isinstance(node, ast.BinOp):
         op_type = type(node.op)
         if op_type not in _OPERATORS:
-            raise ValueError(f"Opérateur binaire non supporté : {op_type.__name__}")
+            raise ValueError(f"Opérateur non supporté : {op_type.__name__}")
         left = _eval_node(node.left)
         right = _eval_node(node.right)
-        
-        # Protection contre la division par zéro
+
         if op_type in (ast.Div, ast.FloorDiv, ast.Mod) and right == 0:
             raise ZeroDivisionError("Division par zéro.")
-        # Protection contre les puissances gigantesques
-        if op_type is ast.Pow and (right > 1000 or (isinstance(left, (int, float)) and left > 1000 and right > 10)):
-            raise ValueError("Calcul trop volumineux (dépassement de capacité).")
-            
+        if op_type is ast.Pow and (right > 100 or (isinstance(left, (int, float)) and left > 1000 and right > 5)):
+            raise ValueError("Puissance trop grande.")
+
         return _OPERATORS[op_type](left, right)
 
     elif isinstance(node, ast.UnaryOp):
         op_type = type(node.op)
         if op_type not in _OPERATORS:
             raise ValueError(f"Opérateur unaire non supporté : {op_type.__name__}")
-        operand = _eval_node(node.operand)
-        return _OPERATORS[op_type](operand)
-
-    elif isinstance(node, ast.Name):
-        name = node.id.lower()
-        if name in _SAFE_CONSTANTS:
-            return _SAFE_CONSTANTS[name]
-        raise ValueError(f"Constante ou variable inconnue : '{node.id}'")
+        return _OPERATORS[op_type](_eval_node(node.operand))
 
     elif isinstance(node, ast.Call):
         if not isinstance(node.func, ast.Name):
-            raise ValueError("Appels de fonctions complexes non autorisés.")
+            raise ValueError("Appel de fonction invalide.")
         func_name = node.func.id.lower()
         if func_name not in _SAFE_FUNCTIONS:
-            raise ValueError(f"Fonction interdite ou inconnue : '{func_name}'")
+            raise ValueError(f"Fonction non autorisée : '{func_name}'")
         args = [_eval_node(arg) for arg in node.args]
         return _SAFE_FUNCTIONS[func_name](*args)
 
-    raise ValueError(f"Expression non autorisée ou invalide : {type(node).__name__}")
+    raise ValueError(f"Expression non autorisée : {type(node).__name__}")
 
 
 def calculate(expression: str) -> str:
     """Calcule le résultat d'une expression mathématique arithmétique.
 
-    Supporte les opérations +, -, *, /, //, %, **, parenthèses, constantes (pi, e) et fonctions usuelles (sqrt, round, abs, min, max).
+    Supporte les opérations +, -, *, /, //, %, **, parenthèses et les fonctions usuelles (round, abs, sqrt).
 
     Args:
         expression: L'expression mathématique à évaluer (ex: '25 * 4 + 10', 'sqrt(144) + 8', 'round(100 / 3, 2)').
@@ -103,8 +82,7 @@ def calculate(expression: str) -> str:
     try:
         parsed = ast.parse(clean_expr, mode="eval")
         result = _eval_node(parsed.body)
-        
-        # Formatage lisible du résultat
+
         if isinstance(result, float) and result.is_integer():
             result = int(result)
         return str(result)

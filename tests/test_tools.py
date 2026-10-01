@@ -20,7 +20,6 @@ def test_calculator_arithmetic():
 def test_calculator_functions():
     assert calculate("sqrt(144)") == "12"
     assert calculate("round(10 / 3, 2)") == "3.33"
-    assert calculate("max(5, 12, 3)") == "12"
     assert calculate("abs(-42)") == "42"
 
 

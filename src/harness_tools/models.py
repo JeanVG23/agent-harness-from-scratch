@@ -3,27 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum
-from typing import Any, Callable
+from typing import Any, Callable, Literal
 
-
-class Role(str, Enum):
-    """Rôles de messages dans une conversation standard avec LLM."""
-    SYSTEM = "system"
-    USER = "user"
-    ASSISTANT = "assistant"
-    TOOL = "tool"
-
-
-@dataclass(frozen=True, slots=True)
-class ToolParameter:
-    """Spécification d'un paramètre d'outil."""
-    name: str
-    param_type: str
-    description: str
-    required: bool = True
-    default: Any = None
-    items_type: str | None = None
+Role = Literal["system", "user", "assistant", "tool"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,13 +57,10 @@ class Message:
 
     def to_dict(self) -> dict[str, Any]:
         """Convertit le message en dictionnaire JSON pour l'API Ollama/OpenAI."""
-        role_str = self.role.value if isinstance(self.role, Role) else str(self.role)
-        data: dict[str, Any] = {"role": role_str}
-
-        if self.content is not None:
-            data["content"] = self.content
-        else:
-            data["content"] = ""
+        data: dict[str, Any] = {
+            "role": str(self.role),
+            "content": self.content or "",
+        }
 
         if self.tool_calls:
             data["tool_calls"] = [
