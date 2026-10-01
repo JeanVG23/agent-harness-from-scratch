@@ -35,6 +35,9 @@ htmlcov/
 .idea/
 .vscode/
 
-# Secrets
+# Secrets & Local configs
 .env
 secrets/
+GEMINI.md
+AGENTS.md
+.agents/
