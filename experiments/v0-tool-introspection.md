@@ -20,8 +20,8 @@ Rapport technique rédigé le 1er octobre 2026.
 * **Problème :** Écrire les schémas JSON à la main pour chaque outil est fastidieux, propice aux erreurs de syntaxe, et crée un risque de divergence entre le code Python réel et la spécification donnée au LLM.
 * **Solution retenue :** Utiliser la réflexivité de Python (`inspect.signature` et parsing de `__doc__`).
 * **Mécanique interne :**
-  - **Types :** Extraction des annotations de types (`str`, `int`, `float`, `bool`, `list[T]`, `Optional[T]`) et conversion vers le standard JSON Schema (`string`, `integer`, `number`, `boolean`, `array`, `anyOf`).
-  - **Descriptions :** Extraction automatique de la description générale et de chaque argument grâce au découpage des docstrings (formats Google `Args:` et Sphinx `:param:`).
+  - **Types :** Extraction des annotations de types (`str`, `int`, `float`, `bool`, `list[T]`, `Optional[T]`) et conversion vers le standard JSON Schema (`string`, `integer`, `number`, `boolean`, `array`).
+  - **Descriptions :** Extraction automatique de la description générale et de chaque argument grâce au découpage des docstrings au format standard Google (`Args:`).
   - **Obligatoire vs Optionnel :** Détection de l'absence de valeur par défaut (`inspect.Parameter.empty`) pour peupler le tableau `required`.
 
 ### 2.2 Sécurité de la Calculatrice (AST vs `eval`)
