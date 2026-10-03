@@ -2,7 +2,7 @@
 
 Ce projet explore, étape par étape, la construction en Python d’un moteur d'exécution d'outils (**Agent Harness**) et de son banc d'évaluation (**Evaluation Harness**).
 
-Comme pour le projet RAG précédent, l’objectif est **pédagogique** : comprendre et implémenter soi-même les mécanismes fondamentaux (introspection des fonctions, génération de schémas JSON, boucle agentique, gestion d'erreurs, abstention, garde-fous) **sans dépendance à un framework magique**, avant de confronter notre solution à des outils existants (**Smolagents**, **Pydantic-AI**).
+L’objectif est **pédagogique et architectural** : comprendre et implémenter soi-même les mécanismes fondamentaux (introspection des fonctions, génération de schémas JSON, boucle agentique, gestion d'erreurs, abstention, garde-fous) **sans dépendance à un framework magique**, avant de confronter notre solution à des outils existants (**Smolagents**, **Pydantic-AI**).
 
 ---
 
@@ -28,41 +28,44 @@ En parallèle, un **Harness d'évaluation** mesure si le modèle choisit les bon
 Pour que la complexité réside dans l'ingénierie du harness et non dans le métier, le domaine est volontairement simple et sans ambiguïté :
 * **Horloge & Dates (`clock`)** : Obtenir l'heure/date actuelle avec fuseau horaire, calculer un décalage de jours.
 * **Calculatrice arithmétique (`calculator`)** : Évaluer des expressions mathématiques de manière sécurisée (analyseur AST, sans `eval`).
-* **Gestionnaire de Notes (`notes`)** : Créer, rechercher par mot-clé, lire et lister des notes.
-* **Gestionnaire de Tâches To-Do (`todo`)** : Ajouter, lister et cocher des tâches terminées.
+* **Gestionnaire de Notes (`notes`)** : Créer, rechercher par mot-clé, lire et lister des notes (stockage mémoire).
+* **Gestionnaire de Tâches To-Do (`todo`)** : Ajouter, lister et cocher des tâches terminées (stockage mémoire).
 
 Ce domaine permet de couvrir :
 1. Des outils en lecture seule (`get_current_time`, `search_notes`).
 2. Des outils avec mutation d'état (`create_note`, `add_todo`, `complete_todo`).
-3. Des dépendances multi-étapes (ex. : *« Calcule 14 * 25 puis enregistre une note avec le résultat »* ou *« Quelle est la date dans 3 jours et ajoute une tâche pour ce jour-là »*).
-4. Des cas d'abstention (ex. : *« Quel temps fait-il à Tokyo ? »* $\rightarrow$ aucun outil météo, le modèle doit s'abstenir d'inventer).
+3. Des dépendances multi-étapes (*« Calcule 14 * 25 puis enregistre une note avec le résultat »*).
+4. Des cas d'abstention (*« Quel temps fait-il à Tokyo ? »* $\rightarrow$ aucun outil météo, le modèle doit s'abstenir d'inventer).
 
 ---
 
 ## 3. Feuille de route des itérations
 
-Chaque version fera l'objet d'un rapport dans `experiments/` et d'une mesure chiffrée :
+Chaque version fait l'objet d'un rapport documenté et chiffré dans `experiments/` :
 
-- **Étape 1 : Socle & Définition des Outils (en cours)**
-  - Introspection automatique des signatures Python (type hints + docstrings) vers le schéma JSON compatible OpenAI/Ollama.
-  - Implémentation des outils métiers isolés et testés unitairement.
-- **Étape 2 : v0 — ReAct pur en prompt texte**
+- [x] **Étape 1 : Socle & Définition des Outils**
+  - Introspection automatique des signatures Python (type hints + docstrings) vers schéma JSON compatible OpenAI/Ollama.
+  - Implémentation des outils métiers isolés, registre centralisé et tests unitaires.
+  - 📄 Rapport : [`experiments/v0-tool-introspection.md`](experiments/v0-tool-introspection.md)
+- [x] **Étape 2 : v0 — ReAct pur en prompt texte**
   - Injection des schémas d'outils dans le system prompt.
-  - Formatage imposé (ex: `Action: tool_name`, `Action Input: {...}`).
-  - Parsing manuel et boucle d'exécution sans support natif.
-- **Étape 3 : v1 — Tool Calling natif (Ollama/OpenAI)**
-  - Utilisation du paramètre `tools` de l'API.
-  - Validation et dispatch automatique des appels JSON.
-- **Étape 4 : v2 — Boucle multi-step & Trajectoire**
-  - Enchaînement de plusieurs outils jusqu'à résolution.
-  - Détection de boucles infinies et limites de pas.
-- **Étape 5 : v3 — Robustesse & Auto-correction**
-  - Renvoyer l'erreur d'exécution ou de validation au LLM pour qu'il corrige ses arguments.
-- **Étape 6 : v4 — Garde-fous & Confirmation humaine**
+  - Formatage imposé (`Thought` / `Action` / `Action Input` / `Final Answer`).
+  - Parsing manuel par regex et exécution sans support natif d'API.
+  - 📄 Rapport : [`experiments/v0-react-prompting.md`](experiments/v0-react-prompting.md)
+- [x] **Étape 3 : v1 — Tool Calling natif (Ollama/OpenAI)**
+  - Utilisation du paramètre `tools` natif d'API avec payload JSON structuré.
+  - Comparatif quantitatif v0 vs v1 (latence, fidélité aux schémas, tokens consommés).
+  - 📄 Rapports : [`experiments/v1-native-tool-calling.md`](experiments/v1-native-tool-calling.md) et [`experiments/v0-v1-architecture-comparison.md`](experiments/v0-v1-architecture-comparison.md)
+- [ ] **Étape 4 : v2 — Boucle multi-step & Trajectoire**
+  - Enchaînement de plusieurs outils séquentiels jusqu'à résolution.
+  - Historique de trajectoire, détection de boucles infinies et limites de pas.
+- [ ] **Étape 5 : v3 — Robustesse & Auto-correction**
+  - Renvoyer l'erreur d'exécution ou de validation au LLM pour correction autonome des arguments.
+- [ ] **Étape 6 : v4 — Garde-fous & Confirmation humaine**
   - Interception des actions destructives (suppression de note) nécessitant un accord explicite.
-- **Étape 7 : Banc d'évaluation & Métriques**
-  - Dataset de test : précision du choix d'outil, validité des arguments, taux d'abstention, nombre d'étapes moyen.
-- **Étape 8 : Comparatif avec Smolagents & Pydantic-AI**
+- [ ] **Étape 7 : Banc d'évaluation & Métriques**
+  - Dataset de test : précision du choix d'outil, validité des arguments, taux d'abstention.
+- [ ] **Étape 8 : Comparatif avec Smolagents & Pydantic-AI**
   - Réalisation de la même tâche avec ces bibliothèques et confrontation des architectures.
 
 ---
@@ -70,31 +73,75 @@ Chaque version fera l'objet d'un rapport dans `experiments/` et d'une mesure chi
 ## 4. Organisation du code
 
 ```text
-harness_tools/
+agent-harness-from-scratch/
 ├── pyproject.toml
+├── LICENSE
 ├── README.md
 ├── src/
 │   └── harness_tools/
 │       ├── __init__.py
-│       ├── models.py              # Types de données : ToolDef, ToolCall, ToolResult, etc.
+│       ├── models.py              # Types de données : ToolDef, ToolCall, ToolResult, Message
 │       ├── tools/
 │       │   ├── __init__.py
-│       │   ├── registry.py        # Introspection automatique & registre
-│       │   ├── clock.py           # Outil horloge/dates
-│       │   ├── calculator.py      # Outil calcul arithmétique (AST)
-│       │   ├── notes.py           # Outil notes
-│       │   └── todo.py            # Outil to-do
+│       │   ├── registry.py        # Introspection automatique & registre d'outils
+│       │   ├── clock.py           # Outil horloge / dates
+│       │   ├── calculator.py      # Outil calcul arithmétique (AST sécurisé)
+│       │   ├── notes.py           # Outil gestionnaire de notes en mémoire
+│       │   ├── todo.py            # Outil to-do list en mémoire
+│       │   └── default_tools.py   # Collection des outils par défaut
 │       ├── llm/
-│       │   └── client.py          # Client Ollama unifié (local / cloud)
+│       │   ├── __init__.py
+│       │   └── client.py          # Client HTTP standard Ollama (local / cloud)
 │       └── harness/
-│           ├── loop.py            # Boucle d'exécution agentique
-│           └── guardrails.py      # Sécurité et limites
+│           ├── __init__.py
+│           ├── react_v0.py        # Runtime v0 : ReAct prompté + parseur regex
+│           └── native_v1.py       # Runtime v1 : Tool Calling natif d'API
 ├── tests/
-│   ├── test_registry.py
-│   └── test_tools.py
-├── evaluation/
-│   ├── protocol.md
-│   └── dataset.json
-├── experiments/
-└── comparisons/
+│   ├── test_client.py             # Tests unitaires hermétiques du client HTTP
+│   ├── test_native_v1.py          # Tests unitaires du harness v1 (mocks)
+│   ├── test_react_v0.py           # Tests unitaires du harness v0 (mocks)
+│   ├── test_registry.py           # Tests de l'introspection et du registre
+│   └── test_tools.py              # Tests fonctionnels des outils métiers
+└── experiments/
+    ├── v0-tool-introspection.md   # Spécification et benchmark des schémas JSON
+    ├── v0-react-prompting.md      # Résultats d'expérience v0 (ReAct)
+    ├── v1-native-tool-calling.md  # Résultats d'expérience v1 (Tool Calling natif)
+    ├── v0-v1-architecture-comparison.md # Analyse comparative et diagrammes de flux
+    ├── run_v0_sample.py           # Script d'exécution live v0 (Ollama)
+    └── run_v1_comparison.py       # Benchmark comparatif en direct v0 vs v1
+```
+
+---
+
+## 5. Démarrage rapide
+
+### Prérequis
+* Python `>= 3.11`
+* Gestionnaire de paquets [uv](https://docs.astral.sh/uv/) (recommandé) ou `pip`
+* [Ollama](https://ollama.ai/) avec un modèle local (ex. `llama3.2:3b` ou `qwen2.5:7b`) pour exécuter les benchmarks réels.
+
+### Installation
+
+```bash
+git clone git@github.com:JeanVG23/agent-harness-from-scratch.git
+cd agent-harness-from-scratch
+uv sync
+```
+
+### Lancer les tests unitaires
+Les tests sont **100 % hermétiques** (aucun serveur LLM ou accès réseau externe requis, temps d'exécution < 50 ms) :
+
+```bash
+uv run pytest
+```
+
+### Lancer les benchmarks réels (avec Ollama)
+Assurez-vous qu'Ollama est démarré localement :
+
+```bash
+# Démonstration du runtime ReAct v0
+uv run python experiments/run_v0_sample.py
+
+# Benchmark comparatif direct v0 (ReAct) vs v1 (Natif)
+uv run python experiments/run_v1_comparison.py
 ```

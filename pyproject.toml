@@ -3,6 +3,7 @@ name = "harness-tools"
 version = "0.1.0"
 description = "Harness et Tool Calling construits à la main en Python, avec banc d'évaluation et comparatif"
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.11"
 dependencies = []
 
