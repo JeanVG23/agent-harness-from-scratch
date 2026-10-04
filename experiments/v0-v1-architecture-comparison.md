@@ -1,6 +1,6 @@
-# Architecture & Flux d'Exécution : Comparatif v0 vs v1
+# Architecture & Flux d'Exécution : De v0 à v2
 
-Ce document synthétise les différences architecturales et mécaniques entre l'approche **v0 (ReAct par Prompting Textuel)** et l'approche **v1 (Tool Calling Natif d'API)**.
+Ce document synthétise les différences architecturales et mécaniques entre l'approche **v0 (ReAct par Prompting Textuel)**, l'approche **v1 (Tool Calling Natif d'API)** et l'approche **v2 (Enchaînement Multi-Étapes & Garde-Fous Anti-Boucle)**.
 
 ---
 
@@ -8,7 +8,7 @@ Ce document synthétise les différences architecturales et mécaniques entre l'
 
 Avant d'examiner les flux, rappelons la frontière d'exécution :
 * **Le LLM (Ollama) :** Est un système *stateless* (sans état) qui génère des tokens probables. Il n'a **aucun terminal**, aucun accès réseau direct, et ne peut exécuter aucune ligne de code.
-* **Le Harness (notre script Python local) :** Est le moteur exécutif. Il détient les fonctions Python réelles ([`clock.py`](file:///Users/jeanvangysel/code/website/harness_tools/src/harness_tools/tools/clock.py), [`calculator.py`](file:///Users/jeanvangysel/code/website/harness_tools/src/harness_tools/tools/calculator.py)), appelle l'API d'Ollama, valide les données, exécute les calculs en mémoire et réinjecte l'information.
+* **Le Harness (notre runtime Python local) :** Est le moteur exécutif. Il détient les fonctions Python réelles ([`clock.py`](file:///Users/jeanvangysel/code/website/harness_tools/src/harness_tools/tools/clock.py), [`calculator.py`](file:///Users/jeanvangysel/code/website/harness_tools/src/harness_tools/tools/calculator.py), [`notes.py`](file:///Users/jeanvangysel/code/website/harness_tools/src/harness_tools/tools/notes.py), [`todo.py`](file:///Users/jeanvangysel/code/website/harness_tools/src/harness_tools/tools/todo.py)), appelle l'API d'Ollama, valide les données, exécute les calculs en mémoire et réinjecte l'information.
 
 ---
 
@@ -56,7 +56,7 @@ sequenceDiagram
 
 ---
 
-## 3. Diagramme de Séquence : v1 (Tool Calling Natif)
+## 3. Diagramme de Séquence : v1 (Tool Calling Natif 1-Shot)
 
 Dans la version v1 ([`native_v1.py`](file:///Users/jeanvangysel/code/website/harness_tools/src/harness_tools/harness/native_v1.py)), les outils sont déclarés via le paramètre officiel `tools` de l'API HTTP, et le modèle répond avec des structures de données typées.
 
@@ -93,41 +93,142 @@ sequenceDiagram
 
 ---
 
-## 4. Comparatif Architectural Synthétique
+## 4. Diagramme de Séquence : v2 (Chaînage Multi-Étapes & Passage de Données)
+
+Dans la version v2 ([`native_v2.py`](file:///Users/jeanvangysel/code/website/harness_tools/src/harness_tools/harness/native_v2.py)), le harness orchestre des **trajectoires séquentielles** où le résultat d'un premier outil est réinjecté pour alimenter les paramètres d'un second outil.
 
 ```mermaid
-flowchart TD
-    subgraph V0["v0 — ReAct Prompté (Artisanat Textuel)"]
-        direction TB
-        P0["System Prompt<br/>(Markdown textuel des outils)"] --> L0["LLM en génération libre"]
-        L0 --> T0["Texte brut :<br/>Thought / Action / Action Input"]
-        T0 --> R0["Parseur Regex & json.loads()"]
-        R0 --> E0["Exécution Python locale"]
-        E0 --> C0["Concaténation de chaînes :<br/>Observation: ..."]
-        C0 --> L0
+sequenceDiagram
+    autonumber
+    actor User as Utilisateur
+    participant Harness as Harness Python (native_v2)
+    participant Registry as ToolRegistry (Python local)
+    participant Ollama as Serveur Ollama (LLM)
+
+    User->>Harness: run("Calcule 15 * 12, puis crée une note 'Budget 2026' contenant ce montant.")
+    
+    rect rgb(240, 248, 255)
+    Note over Harness,Ollama: Étape 1 : Appel du premier outil (calculate)
+    Harness->>Ollama: POST /api/chat (messages, tools)
+    Ollama-->>Harness: tool_calls: [calculate(expression="15 * 12")]
+    Harness->>Registry: execute("calculate", {"expression": "15 * 12"})
+    Registry-->>Harness: ToolResult(output="180")
+    Note over Harness: Enregistrement dans l'historique :<br/>{role: "tool", name: "calculate", content: "180"}
     end
 
-    subgraph V1["v1 — Tool Calling Natif (Protocole d'API)"]
-        direction TB
-        P1["Payload HTTP :<br/>messages + tools JSON Schema"] --> L1["LLM sous contrainte grammaticale<br/>(Tokens spéciaux)"]
-        L1 --> T1["Payload HTTP structuré :<br/>tool_calls: [...]"]
-        T1 --> R1["Désérialisation JSON directe<br/>(0 Regex)"]
-        R1 --> E1["Exécution Python locale"]
-        E1 --> C1["Message structuré :<br/>{role: 'tool', content: ...}"]
-        C1 --> L1
+    rect rgb(245, 255, 245)
+    Note over Harness,Ollama: Étape 2 : Le LLM exploite '180' pour le second outil (create_note)
+    Harness->>Ollama: POST /api/chat (messages mis à jour avec le résultat 180)
+    Ollama-->>Harness: tool_calls: [create_note(title="Budget 2026", content="180")]
+    Harness->>Registry: execute("create_note", {"title": "Budget 2026", "content": "180"})
+    Registry-->>Harness: ToolResult(output="Succès : La note 'Budget 2026' a été créée.")
+    Note over Harness: Enregistrement dans l'historique :<br/>{role: "tool", name: "create_note", content: "Succès..."}
+    end
+
+    rect rgb(255, 255, 240)
+    Note over Harness,Ollama: Étape 3 : Conclusion finale
+    Harness->>Ollama: POST /api/chat (messages complets)
+    Ollama-->>Harness: {content: "La note Budget 2026 a été créée avec le montant de 180.", tool_calls: []}
+    end
+
+    Harness-->>User: "La note Budget 2026 a été créée avec le montant de 180."
+```
+
+---
+
+## 5. Diagramme de Séquence : v2 (Mécanisme Anti-Boucle Infinie)
+
+Lorsqu'un LLM fait face à une erreur ou une réponse inattendue, il a tendance à s'enfermer dans un **attracteur auto-régressif** et à ré-exécuter le même appel identique à l'infini.
+
+Voici comment le **Garde-Fou v2 (*Loop Guard*)** intercepte cette anomalie (constatée en direct sur `calculate_date_offset(days="5")`) :
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Utilisateur
+    participant Harness as Harness Python (native_v2)
+    participant Detector as Détecteur d'Empreinte (Call Fingerprint)
+    participant Registry as ToolRegistry (Python local)
+    participant Ollama as Serveur Ollama (LLM)
+
+    User->>Harness: run("Quelle est la date dans 5 jours et ajoute une tâche...")
+    
+    rect rgb(255, 245, 245)
+    Note over Harness,Ollama: Tour 1 : Premier appel avec erreur de typage (str au lieu de int)
+    Harness->>Ollama: POST /api/chat (messages, tools)
+    Ollama-->>Harness: tool_call: calculate_date_offset(days="5")
+    Harness->>Detector: check(name="calculate_date_offset", args={"days": "5"})
+    Detector-->>Harness: count = 1 (OK)
+    Harness->>Registry: execute(name, args)
+    Note over Registry: TypeError: unsupported type for timedelta days component: str
+    Registry-->>Harness: ToolResult(output="TypeError: unsupported type...")
+    Harness->>Ollama: POST /api/chat (messages + {role: "tool", content: "TypeError..."})
+    end
+
+    rect rgb(255, 230, 230)
+    Note over Harness,Ollama: Tour 2 : Le modèle panique et répète à l'identique
+    Ollama-->>Harness: tool_call: calculate_date_offset(days="5")
+    Harness->>Detector: check(name="calculate_date_offset", args={"days": "5"})
+    Detector-->>Harness: count = 2 (SEUIL D'ALERTE ATTEINT)
+    Harness->>Registry: execute(name, args)
+    Registry-->>Harness: ToolResult(output="TypeError...")
+    Note over Harness: Greffe d'un avertissement système réflexif :<br/>"[Garde-fou Système] : Tu viens de ré-exécuter cet outil avec des arguments identiques..."
+    Harness->>Ollama: POST /api/chat (messages + {role: "tool", content: "TypeError... + Warning"})
+    end
+
+    rect rgb(255, 200, 200)
+    Note over Harness,Ollama: Tour 3 : Récidive -> Coupure immédiate (Circuit Breaker)
+    Ollama-->>Harness: tool_call: calculate_date_offset(days="5")
+    Harness->>Detector: check(name="calculate_date_offset", args={"days": "5"})
+    Detector-->>Harness: count = 3 (> max_repeated_calls -> ALARME)
+    Note over Harness: COURT-CIRCUIT IMMÉDIAT !<br/>Aucun appel à Registry, aucun appel à Ollama.<br/>loop_detected = True
+    Harness-->>User: "Arrêt de sécurité : Boucle infinie détectée sur l'outil 'calculate_date_offset' avec les mêmes arguments répétés 3 fois."
     end
 ```
 
 ---
 
-## 5. Synthèse des Différences
+## 6. Machine à États de l'Harness v2 (Flowchart)
 
-| Dimension | v0 — ReAct Textuel | v1 — Tool Calling Natif |
-|---|---|---|
-| **Canal de déclaration** | Texte libre dans le `system_prompt` | Paramètre API HTTP officiel `tools: [...]` |
-| **Spécification des outils** | Chaînes formatées à la main | Schémas formels **JSON Schema** standardisés |
-| **Expression de l'intention** | Texte simulé (`Action: foo`) | Tableau d'objets `tool_calls` |
-| **Mécanisme de capture** | Expressions régulières ([`re.search`](https://docs.python.org/3/library/re.html#re.search)) | Champ de réponse HTTP déjà désérialisé |
-| **Garantie syntaxique** | Faible (dépend du respect des consignes) | Élevée (grammaires de décodage côté moteur d'inférence) |
-| **Réinjection de la donnée** | Concaténation textuelle (`\nObservation: ...`) | Rôle sémantique dédié `{role: "tool"}` |
-| **Latence observée (4B)** | Élevée (verbiage et monologues intermédiaires) | Optimale (émissions compactes et directes) |
+```mermaid
+flowchart TD
+    Start(["Requête utilisateur"]) --> Init["Initialisation des messages<br/>(system + user)"]
+    Init --> LoopCheck{"Étape <= max_steps ?"}
+    
+    LoopCheck -->|Non| MaxExceeded["Échec : Limite max_steps atteinte"]
+    LoopCheck -->|Oui| CallLLM["Appel Ollama POST /api/chat<br/>(messages, tools)"]
+    
+    CallLLM --> HasToolCall{"Présence de tool_calls ?"}
+    
+    HasToolCall -->|Non| FinalAnswer["Réponse finale textuelle ✅"]
+    
+    HasToolCall -->|Oui| HashArgs["Calcul de l'empreinte canonique :<br/>name + json_trié(arguments)"]
+    
+    HashArgs --> CountRep{"Répétitions consécutives ?"}
+    
+    CountRep -->|"> max_repeated_calls (3)"| CircuitBreaker["🚨 Coupure de Sécurité<br/>(Circuit Breaker anti-boucle)"]
+    CircuitBreaker --> ReturnLoop["Arrêt immédiat :<br/>loop_detected = True<br/>Économie de tokens et de temps"]
+    
+    CountRep -->|"== max_repeated_calls (2)"| ExecWarn["Exécution de l'outil +<br/>Injection de l'avertissement réflexif"]
+    
+    CountRep -->|"< max_repeated_calls (1)"| ExecNorm["Exécution nominale de l'outil"]
+    
+    ExecWarn --> InjectToolMsg["Ajout message {role: 'tool', content: ...}"]
+    ExecNorm --> InjectToolMsg
+    
+    InjectToolMsg --> NextStep["Étape suivante (step + 1)"]
+    NextStep --> LoopCheck
+```
+
+---
+
+## 7. Synthèse Comparative des 3 Versions
+
+| Dimension | v0 — ReAct Textuel | v1 — Tool Calling Natif | v2 — Multi-Étapes & Garde-Fous |
+|---|---|---|---|
+| **Protocole d'échange** | Texte libre + Regex | API `tools: [...]` + grammaires JSON | API `tools: [...]` + grammaires JSON |
+| **Type de trajectoire** | 1 action basique | 1 action optimisée | **Multi-actions en cascade** (donnée $T_1 \to T_2$) |
+| **Garde-fou de boucle** | Aucun (bloqué au `max_steps`) | Aucun (bloqué au `max_steps`) | **Détecteur d'empreinte canonique + Circuit Breaker** |
+| **Gestion des répétitions** | Aveugle | Aveugle | **Avertissement réflexif à $N=2$, coupure à $N=3$** |
+| **Latence moyenne (4B)** | Très lente (17s à 62s) | Très rapide (8s à 13s) | Contrôlée (arrêt précoce en cas de dérive) |
+| **Persistance mémoire** | Simulée en texte | En mémoire | Validée sur états réels (`notes`, `todo`) |
