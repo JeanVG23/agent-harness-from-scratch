@@ -107,29 +107,23 @@ sequenceDiagram
 
     User->>Harness: run("Calcule 15 * 12, puis crée une note 'Budget 2026' contenant ce montant.")
     
-    rect rgb(240, 248, 255)
-    Note over Harness,Ollama: Étape 1 : Appel du premier outil (calculate)
+    Note over Harness,Ollama: ━━━ Étape 1 : Appel du premier outil (calculate) ━━━
     Harness->>Ollama: POST /api/chat (messages, tools)
     Ollama-->>Harness: tool_calls: [calculate(expression="15 * 12")]
     Harness->>Registry: execute("calculate", {"expression": "15 * 12"})
     Registry-->>Harness: ToolResult(output="180")
     Note over Harness: Enregistrement dans l'historique :<br/>{role: "tool", name: "calculate", content: "180"}
-    end
 
-    rect rgb(245, 255, 245)
-    Note over Harness,Ollama: Étape 2 : Le LLM exploite '180' pour le second outil (create_note)
+    Note over Harness,Ollama: ━━━ Étape 2 : Le LLM exploite '180' pour le second outil (create_note) ━━━
     Harness->>Ollama: POST /api/chat (messages mis à jour avec le résultat 180)
     Ollama-->>Harness: tool_calls: [create_note(title="Budget 2026", content="180")]
     Harness->>Registry: execute("create_note", {"title": "Budget 2026", "content": "180"})
     Registry-->>Harness: ToolResult(output="Succès : La note 'Budget 2026' a été créée.")
     Note over Harness: Enregistrement dans l'historique :<br/>{role: "tool", name: "create_note", content: "Succès..."}
-    end
 
-    rect rgb(255, 255, 240)
-    Note over Harness,Ollama: Étape 3 : Conclusion finale
+    Note over Harness,Ollama: ━━━ Étape 3 : Conclusion finale ━━━
     Harness->>Ollama: POST /api/chat (messages complets)
     Ollama-->>Harness: {content: "La note Budget 2026 a été créée avec le montant de 180.", tool_calls: []}
-    end
 
     Harness-->>User: "La note Budget 2026 a été créée avec le montant de 180."
 ```
@@ -153,8 +147,7 @@ sequenceDiagram
 
     User->>Harness: run("Quelle est la date dans 5 jours et ajoute une tâche...")
     
-    rect rgb(255, 245, 245)
-    Note over Harness,Ollama: Tour 1 : Premier appel avec erreur de typage (str au lieu de int)
+    Note over Harness,Ollama: ━━━ Tour 1 : Premier appel avec erreur de typage (str au lieu de int) ━━━
     Harness->>Ollama: POST /api/chat (messages, tools)
     Ollama-->>Harness: tool_call: calculate_date_offset(days="5")
     Harness->>Detector: check(name="calculate_date_offset", args={"days": "5"})
@@ -163,10 +156,8 @@ sequenceDiagram
     Note over Registry: TypeError: unsupported type for timedelta days component: str
     Registry-->>Harness: ToolResult(output="TypeError: unsupported type...")
     Harness->>Ollama: POST /api/chat (messages + {role: "tool", content: "TypeError..."})
-    end
 
-    rect rgb(255, 230, 230)
-    Note over Harness,Ollama: Tour 2 : Le modèle panique et répète à l'identique
+    Note over Harness,Ollama: ━━━ Tour 2 : Le modèle panique et répète à l'identique ━━━
     Ollama-->>Harness: tool_call: calculate_date_offset(days="5")
     Harness->>Detector: check(name="calculate_date_offset", args={"days": "5"})
     Detector-->>Harness: count = 2 (SEUIL D'ALERTE ATTEINT)
@@ -174,16 +165,13 @@ sequenceDiagram
     Registry-->>Harness: ToolResult(output="TypeError...")
     Note over Harness: Greffe d'un avertissement système réflexif :<br/>"[Garde-fou Système] : Tu viens de ré-exécuter cet outil avec des arguments identiques..."
     Harness->>Ollama: POST /api/chat (messages + {role: "tool", content: "TypeError... + Warning"})
-    end
 
-    rect rgb(255, 200, 200)
-    Note over Harness,Ollama: Tour 3 : Récidive -> Coupure immédiate (Circuit Breaker)
+    Note over Harness,Ollama: ━━━ Tour 3 : Récidive -> Coupure immédiate (Circuit Breaker) ━━━
     Ollama-->>Harness: tool_call: calculate_date_offset(days="5")
     Harness->>Detector: check(name="calculate_date_offset", args={"days": "5"})
     Detector-->>Harness: count = 3 (> max_repeated_calls -> ALARME)
     Note over Harness: COURT-CIRCUIT IMMÉDIAT !<br/>Aucun appel à Registry, aucun appel à Ollama.<br/>loop_detected = True
     Harness-->>User: "Arrêt de sécurité : Boucle infinie détectée sur l'outil 'calculate_date_offset' avec les mêmes arguments répétés 3 fois."
-    end
 ```
 
 ---
