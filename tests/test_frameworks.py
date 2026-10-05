@@ -1,0 +1,48 @@
+"""Tests unitaires pour les adaptateurs de frameworks tiers (Smolagents & Pydantic-AI)."""
+
+from __future__ import annotations
+
+from unittest.mock import MagicMock, patch
+import pytest
+
+from harness_tools.frameworks import FrameworkRunResult
+from harness_tools.frameworks.pydantic_ai_adapter import PydanticAIAdapter
+from harness_tools.frameworks.smolagents_adapter import SmolagentsAdapter
+
+
+def test_smolagents_adapter_initialization():
+    """Vérifie l'instanciation de l'adaptateur Smolagents."""
+    adapter = SmolagentsAdapter(model_id="qwen2.5:3b")
+    assert adapter.model_id == "qwen2.5:3b"
+    assert adapter.max_steps == 8
+
+
+def test_pydantic_ai_adapter_initialization():
+    """Vérifie l'instanciation de l'adaptateur Pydantic-AI."""
+    adapter = PydanticAIAdapter(model_name="qwen2.5:3b")
+    assert adapter.model_name == "qwen2.5:3b"
+    assert adapter.base_url == "http://localhost:11434/v1"
+
+
+def test_smolagents_tool_tracking():
+    """Vérifie que les outils enveloppés enregistrent fidèlement les invocations."""
+    adapter = SmolagentsAdapter()
+    calls: list[str] = []
+    tools = adapter._build_tracked_tools(calls)
+    assert len(tools) == 11
+
+    # Trouver l'outil calculate et l'exécuter
+    calc_tool = next(t for t in tools if t.name == "calculate")
+    res = calc_tool(expression="10 + 5")
+    assert "15" in str(res)
+    assert calls == ["calculate"]
+
+
+def test_pydantic_ai_tool_tracking():
+    """Vérifie que les outils enveloppés Pydantic-AI enregistrent fidèlement les invocations."""
+    adapter = PydanticAIAdapter()
+    calls: list[str] = []
+    agent = adapter._build_agent_with_tracking(calls)
+    tools_dict = agent._function_toolset.tools
+    assert len(tools_dict) == 11
+    assert "create_note" in tools_dict
