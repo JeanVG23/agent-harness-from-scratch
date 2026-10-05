@@ -68,8 +68,10 @@ Chaque version fait l'objet d'un rapport documenté et chiffré dans `experiment
   - Classification explicite des risques (`read`, `write`, `destructive`) et politique d'approbation (`auto_approve`).
   - Interception pré-exécution (`confirmation_handler`), garantie absolue de non-exécution en cas de refus et gestion du biais de complétion du modèle.
   - 📄 Rapport : [`experiments/v4-human-in-the-loop.md`](experiments/v4-human-in-the-loop.md)
-- [ ] **Étape 7 : Banc d'évaluation & Métriques**
-  - Dataset de test : précision du choix d'outil, validité des arguments, taux d'abstention.
+- [x] **Étape 7 : Banc d'évaluation & Métriques (Evaluation Harness)**
+  - Dataset standard de 12 cas (direct, multi-step, abstention, criticité).
+  - Évaluateur automatisé sans framework : précision d'outils, taux d'abstention, étapes moyennes et latence.
+  - 📄 Rapport : [`experiments/v5-evaluation-harness.md`](experiments/v5-evaluation-harness.md)
 - [ ] **Étape 8 : Comparatif avec Smolagents & Pydantic-AI**
   - Réalisation de la même tâche avec ces bibliothèques et confrontation des architectures.
 
