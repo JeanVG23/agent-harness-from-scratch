@@ -111,4 +111,6 @@ def delete_note(title: str) -> str:
         actual_title = _NOTES_STORE[key].title
         del _NOTES_STORE[key]
         return f"Succès : La note '{actual_title}' a été supprimée."
-    return f"Erreur : Impossible de supprimer, la note '{title}' n'existe pas."
+    available = [n.title for n in _NOTES_STORE.values()]
+    available_str = ", ".join(f"'{t}'" for t in available) if available else "aucune"
+    return f"Erreur : Impossible de supprimer, la note '{title}' n'existe pas. Notes existantes : {available_str}."

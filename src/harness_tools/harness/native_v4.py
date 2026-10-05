@@ -167,9 +167,9 @@ class NativeHarnessV4:
                     "- Si une tâche requiert des actions ou des informations, utilise TOUJOURS les outils disponibles et n'invente jamais de résultat.\n"
                     "- Ne calcule JAMAIS de tête et ne devine JAMAIS une date : appelle systématiquement 'calculate' pour les calculs et 'calculate_date_offset' pour les dates.\n"
                     "- Exploite scrupuleusement les résultats obtenus lors des étapes précédentes.\n"
-                    "- Respecte les types attendus par les outils (ex: nombres entiers pour les compteurs/délais, format AAAA-MM-JJ pour les dates).\n"
-                    "- Si un outil renvoie un message d'erreur ou si une action est refusée par l'utilisateur, prends-en acte immédiatement, ne réitère pas l'action refusée et formule directement ta réponse finale.\n"
-                    "- Dès que la tâche est accomplie ou qu'une action est bloquée par l'utilisateur, formule directement ta réponse finale."
+                    "- Si une action est refusée par l'utilisateur, prends-en acte immédiatement, ne réitère pas l'action refusée et formule directement ta réponse finale.\n"
+                    "- Si un outil renvoie une erreur (ex: argument incorrect ou introuvable), analyse attentivement le message d'erreur et adapte tes arguments ou ton choix d'outil au tour suivant.\n"
+                    "- Dès que la tâche est accomplie ou qu'une action est définitivement bloquée par l'utilisateur, formule directement ta réponse finale."
                 ),
             ),
             Message(role="user", content=user_prompt),
