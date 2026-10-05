@@ -37,6 +37,16 @@ class ToolCall:
 
 
 @dataclass(frozen=True, slots=True)
+class CoercionRecord:
+    """Trace d'une correction déterministe effectuée sur un argument d'outil."""
+    parameter: str
+    original_value: Any
+    coerced_value: Any
+    action: str
+    detail: str
+
+
+@dataclass(frozen=True, slots=True)
 class ToolResult:
     """Résultat de l'exécution d'un outil par le harness."""
     tool_call_id: str
@@ -44,6 +54,7 @@ class ToolResult:
     output: str
     is_error: bool = False
     execution_time_ms: float = 0.0
+    coercions: tuple[CoercionRecord, ...] = ()
 
 
 @dataclass(slots=True)

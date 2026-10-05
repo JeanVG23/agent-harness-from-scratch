@@ -56,11 +56,14 @@ Chaque version fait l'objet d'un rapport documenté et chiffré dans `experiment
   - Utilisation du paramètre `tools` natif d'API avec payload JSON structuré.
   - Comparatif quantitatif v0 vs v1 (latence, fidélité aux schémas, tokens consommés).
   - 📄 Rapports : [`experiments/v1-native-tool-calling.md`](experiments/v1-native-tool-calling.md) et [`experiments/v0-v1-architecture-comparison.md`](experiments/v0-v1-architecture-comparison.md)
-- [ ] **Étape 4 : v2 — Boucle multi-step & Trajectoire**
-  - Enchaînement de plusieurs outils séquentiels jusqu'à résolution.
-  - Historique de trajectoire, détection de boucles infinies et limites de pas.
-- [ ] **Étape 5 : v3 — Robustesse & Auto-correction**
-  - Renvoyer l'erreur d'exécution ou de validation au LLM pour correction autonome des arguments.
+- [x] **Étape 4 : v2 — Boucle multi-step & Trajectoire**
+  - Enchaînement séquentiel d'outils avec passage de données entre étapes.
+  - Historique de trajectoire, détection d'empreinte d'appels (*Call Fingerprint*) et coupure anti-boucle infinie.
+  - 📄 Rapport : [`experiments/v2-multi-step.md`](experiments/v2-multi-step.md)
+- [x] **Étape 5 : v3 — Robustesse, Coercion déterministe & Auto-correction**
+  - **Pilier 1 (Déterministe)** : Résolution du piège d'introspection Python (`eval_str=True`) et normalisation stricte sans LLM (`coercion.py`, entiers, booléens, tableaux, octets nuls).
+  - **Pilier 2 (Agentique)** : Rétroaction didactique avec rappel de schéma et boucle réflexive d'auto-correction lors des erreurs métier.
+  - 📄 Rapport : [`experiments/v3-deterministic-coercion.md`](experiments/v3-deterministic-coercion.md)
 - [ ] **Étape 6 : v4 — Garde-fous & Confirmation humaine**
   - Interception des actions destructives (suppression de note) nécessitant un accord explicite.
 - [ ] **Étape 7 : Banc d'évaluation & Métriques**
@@ -80,10 +83,11 @@ agent-harness-from-scratch/
 ├── src/
 │   └── harness_tools/
 │       ├── __init__.py
-│       ├── models.py              # Types de données : ToolDef, ToolCall, ToolResult, Message
+│       ├── models.py              # Types de données : ToolDef, ToolCall, ToolResult, CoercionRecord, Message
 │       ├── tools/
 │       │   ├── __init__.py
 │       │   ├── registry.py        # Introspection automatique & registre d'outils
+│       │   ├── coercion.py        # Normalisation déterministe des types & assainissement
 │       │   ├── clock.py           # Outil horloge / dates
 │       │   ├── calculator.py      # Outil calcul arithmétique (AST sécurisé)
 │       │   ├── notes.py           # Outil gestionnaire de notes en mémoire
@@ -95,10 +99,15 @@ agent-harness-from-scratch/
 │       └── harness/
 │           ├── __init__.py
 │           ├── react_v0.py        # Runtime v0 : ReAct prompté + parseur regex
-│           └── native_v1.py       # Runtime v1 : Tool Calling natif d'API
+│           ├── native_v1.py       # Runtime v1 : Tool Calling natif d'API (1 tour)
+│           ├── native_v2.py       # Runtime v2 : Multi-étapes & Détection de boucles infinies
+│           └── native_v3.py       # Runtime v3 : Robustesse, Coercion & Auto-correction
 ├── tests/
 │   ├── test_client.py             # Tests unitaires hermétiques du client HTTP
+│   ├── test_coercion.py           # Tests unitaires de la normalisation déterministe
 │   ├── test_native_v1.py          # Tests unitaires du harness v1 (mocks)
+│   ├── test_native_v2.py          # Tests unitaires du harness v2 (multi-step & boucles)
+│   ├── test_native_v3.py          # Tests unitaires du harness v3 (robustesse & auto-correction)
 │   ├── test_react_v0.py           # Tests unitaires du harness v0 (mocks)
 │   ├── test_registry.py           # Tests de l'introspection et du registre
 │   └── test_tools.py              # Tests fonctionnels des outils métiers
@@ -107,8 +116,12 @@ agent-harness-from-scratch/
     ├── v0-react-prompting.md      # Résultats d'expérience v0 (ReAct)
     ├── v1-native-tool-calling.md  # Résultats d'expérience v1 (Tool Calling natif)
     ├── v0-v1-architecture-comparison.md # Analyse comparative et diagrammes de flux
+    ├── v2-multi-step.md           # Résultats d'expérience v2 (Chaînage & Garde-fous)
+    ├── v3-deterministic-coercion.md # Résultats d'expérience v3 (Robustesse & Auto-correction)
     ├── run_v0_sample.py           # Script d'exécution live v0 (Ollama)
-    └── run_v1_comparison.py       # Benchmark comparatif en direct v0 vs v1
+    ├── run_v1_comparison.py       # Benchmark comparatif en direct v0 vs v1
+    ├── run_v2_sample.py           # Test live multi-étapes v2
+    └── run_v3_sample.py           # Test live robustesse & auto-correction v3
 ```
 
 ---
@@ -118,7 +131,7 @@ agent-harness-from-scratch/
 ### Prérequis
 * Python `>= 3.11`
 * Gestionnaire de paquets [uv](https://docs.astral.sh/uv/) (recommandé) ou `pip`
-* [Ollama](https://ollama.ai/) avec un modèle local (ex. `llama3.2:3b` ou `qwen2.5:7b`) pour exécuter les benchmarks réels.
+* [Ollama](https://ollama.ai/) avec un modèle local (ex. `qwen2.5:7b` ou `minimax-m3:cloud`) pour exécuter les benchmarks réels.
 
 ### Installation
 
@@ -129,7 +142,7 @@ uv sync
 ```
 
 ### Lancer les tests unitaires
-Les tests sont **100 % hermétiques** (aucun serveur LLM ou accès réseau externe requis, temps d'exécution < 50 ms) :
+Les tests sont **100 % hermétiques** (aucun serveur LLM ou accès réseau externe requis, temps d'exécution < 100 ms) :
 
 ```bash
 uv run pytest
@@ -144,4 +157,10 @@ uv run python experiments/run_v0_sample.py
 
 # Benchmark comparatif direct v0 (ReAct) vs v1 (Natif)
 uv run python experiments/run_v1_comparison.py
+
+# Démonstration du runtime multi-étapes v2
+uv run python experiments/run_v2_sample.py
+
+# Démonstration du runtime robuste v3 (coercion + auto-correction)
+uv run python experiments/run_v3_sample.py
 ```

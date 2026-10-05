@@ -9,7 +9,8 @@ import time
 import types
 from typing import Any, Callable, Union, get_args, get_origin
 
-from harness_tools.models import ToolDef, ToolResult
+from harness_tools.models import CoercionRecord, ToolDef, ToolResult
+from harness_tools.tools.coercion import sanitize_arguments
 
 
 def _parse_docstring(docstring: str | None) -> tuple[str, dict[str, str]]:
@@ -57,6 +58,28 @@ def _type_to_json_schema(py_type: Any) -> dict[str, Any]:
     if py_type is inspect.Parameter.empty or py_type is Any:
         return {"type": "string"}
 
+    # Gestion des annotations sous forme de chaînes (ex: modules avec 'from __future__ import annotations')
+    if isinstance(py_type, str):
+        type_map = {
+            "int": {"type": "integer"},
+            "float": {"type": "number"},
+            "bool": {"type": "boolean"},
+            "str": {"type": "string"},
+            "list": {"type": "array", "items": {"type": "string"}},
+            "dict": {"type": "object"},
+        }
+        stripped = py_type.strip()
+        if stripped in type_map:
+            return type_map[stripped]
+        if "|" in stripped:
+            first_part = stripped.split("|")[0].strip()
+            if first_part in type_map:
+                return type_map[first_part]
+        if stripped.startswith("list[") and stripped.endswith("]"):
+            inner = stripped[5:-1].strip()
+            inner_schema = type_map.get(inner, {"type": "string"})
+            return {"type": "array", "items": inner_schema}
+
     origin = get_origin(py_type)
     args = get_args(py_type)
 
@@ -88,7 +111,10 @@ def function_to_tool_def(fn: Callable[..., Any], name: str | None = None, descri
     doc_desc, param_docs = _parse_docstring(fn.__doc__)
     fn_desc = description or doc_desc or f"Fonction {fn_name}"
 
-    sig = inspect.signature(fn)
+    try:
+        sig = inspect.signature(fn, eval_str=True)
+    except Exception:
+        sig = inspect.signature(fn)
     properties: dict[str, Any] = {}
     required: list[str] = []
 
@@ -125,8 +151,9 @@ def function_to_tool_def(fn: Callable[..., Any], name: str | None = None, descri
 class ToolRegistry:
     """Registre d'outils et exécuteur d'appels."""
 
-    def __init__(self) -> None:
+    def __init__(self, enable_coercion: bool = True) -> None:
         self._tools: dict[str, ToolDef] = {}
+        self.enable_coercion = enable_coercion
 
     def register(self, fn: Callable[..., Any], name: str | None = None, description: str | None = None) -> ToolDef:
         """Enregistre une fonction Python comme outil."""
@@ -142,7 +169,13 @@ class ToolRegistry:
         """Exporte les définitions au format JSON attendu par les APIs Ollama / OpenAI."""
         return [tool.to_openai_schema() for tool in self._tools.values()]
 
-    def execute(self, name: str, arguments: dict[str, Any], tool_call_id: str = "") -> ToolResult:
+    def execute(
+        self,
+        name: str,
+        arguments: dict[str, Any],
+        tool_call_id: str = "",
+        coerce: bool | None = None,
+    ) -> ToolResult:
         """Exécute un outil de manière sécurisée et chronométrée."""
         start_time = time.perf_counter()
         tool = self.get(name)
@@ -158,10 +191,32 @@ class ToolRegistry:
                 execution_time_ms=elapsed_ms,
             )
 
+        should_coerce = self.enable_coercion if coerce is None else coerce
+        coercion_records: list[CoercionRecord] = []
+        call_arguments = arguments
+
+        if should_coerce:
+            sanitized_args, records, validation_errors = sanitize_arguments(
+                tool.parameters, arguments, drop_unexpected=True
+            )
+            coercion_records = records
+
+            if validation_errors:
+                elapsed_ms = (time.perf_counter() - start_time) * 1000
+                return ToolResult(
+                    tool_call_id=tool_call_id,
+                    name=name,
+                    output=f"Erreur de validation des arguments pour '{name}' : {'; '.join(validation_errors)}",
+                    is_error=True,
+                    execution_time_ms=elapsed_ms,
+                    coercions=tuple(coercion_records),
+                )
+            call_arguments = sanitized_args
+
         try:
             # Vérification des paramètres obligatoires
             required_params = tool.parameters.get("required", [])
-            missing_params = [p for p in required_params if p not in arguments]
+            missing_params = [p for p in required_params if p not in call_arguments]
             if missing_params:
                 elapsed_ms = (time.perf_counter() - start_time) * 1000
                 return ToolResult(
@@ -170,9 +225,10 @@ class ToolRegistry:
                     output=f"Erreur d'arguments : Paramètre(s) obligatoire(s) manquant(s) : {', '.join(missing_params)}",
                     is_error=True,
                     execution_time_ms=elapsed_ms,
+                    coercions=tuple(coercion_records),
                 )
 
-            raw_result = tool.handler(**arguments)
+            raw_result = tool.handler(**call_arguments)
             elapsed_ms = (time.perf_counter() - start_time) * 1000
 
             # Conversion en texte pour le contexte LLM
@@ -183,12 +239,17 @@ class ToolRegistry:
             else:
                 output_str = str(raw_result)
 
+            is_business_error = isinstance(raw_result, str) and (
+                output_str.startswith("Erreur") or output_str.startswith("Error")
+            )
+
             return ToolResult(
                 tool_call_id=tool_call_id,
                 name=name,
                 output=output_str,
-                is_error=False,
+                is_error=is_business_error,
                 execution_time_ms=elapsed_ms,
+                coercions=tuple(coercion_records),
             )
 
         except TypeError as exc:
@@ -199,6 +260,7 @@ class ToolRegistry:
                 output=f"Erreur de type d'arguments pour '{name}': {exc}",
                 is_error=True,
                 execution_time_ms=elapsed_ms,
+                coercions=tuple(coercion_records),
             )
         except Exception as exc:
             elapsed_ms = (time.perf_counter() - start_time) * 1000
@@ -208,4 +270,5 @@ class ToolRegistry:
                 output=f"Exception lors de l'exécution de '{name}': {type(exc).__name__}: {exc}",
                 is_error=True,
                 execution_time_ms=elapsed_ms,
+                coercions=tuple(coercion_records),
             )
