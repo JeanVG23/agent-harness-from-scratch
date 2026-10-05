@@ -3,6 +3,13 @@
 from harness_tools.harness.native_v1 import NativeHarnessV1, NativeResult, NativeStep
 from harness_tools.harness.native_v2 import NativeHarnessV2, NativeResultV2, StepTraceV2
 from harness_tools.harness.native_v3 import NativeHarnessV3, NativeResultV3, StepTraceV3
+from harness_tools.harness.native_v4 import (
+    ApprovalRecord,
+    NativeHarnessV4,
+    NativeResultV4,
+    StepTraceV4,
+    should_request_approval,
+)
 from harness_tools.harness.react_v0 import ReActHarnessV0, ReActResult, ReActStep
 
 __all__ = [
@@ -18,4 +25,9 @@ __all__ = [
     "NativeHarnessV3",
     "NativeResultV3",
     "StepTraceV3",
+    "NativeHarnessV4",
+    "NativeResultV4",
+    "StepTraceV4",
+    "ApprovalRecord",
+    "should_request_approval",
 ]

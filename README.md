@@ -64,8 +64,10 @@ Chaque version fait l'objet d'un rapport documenté et chiffré dans `experiment
   - **Pilier 1 (Déterministe)** : Résolution du piège d'introspection Python (`eval_str=True`) et normalisation stricte sans LLM (`coercion.py`, entiers, booléens, tableaux, octets nuls).
   - **Pilier 2 (Agentique)** : Rétroaction didactique avec rappel de schéma et boucle réflexive d'auto-correction lors des erreurs métier.
   - 📄 Rapport : [`experiments/v3-deterministic-coercion.md`](experiments/v3-deterministic-coercion.md)
-- [ ] **Étape 6 : v4 — Garde-fous & Confirmation humaine**
-  - Interception des actions destructives (suppression de note) nécessitant un accord explicite.
+- [x] **Étape 6 : v4 — Garde-fous, Criticité & Confirmation humaine (Human-in-the-Loop)**
+  - Classification explicite des risques (`read`, `write`, `destructive`) et politique d'approbation (`auto_approve`).
+  - Interception pré-exécution (`confirmation_handler`), garantie absolue de non-exécution en cas de refus et gestion du biais de complétion du modèle.
+  - 📄 Rapport : [`experiments/v4-human-in-the-loop.md`](experiments/v4-human-in-the-loop.md)
 - [ ] **Étape 7 : Banc d'évaluation & Métriques**
   - Dataset de test : précision du choix d'outil, validité des arguments, taux d'abstention.
 - [ ] **Étape 8 : Comparatif avec Smolagents & Pydantic-AI**

@@ -21,15 +21,15 @@ def create_default_registry() -> ToolRegistry:
     registry.register(calculate)
 
     # Outils Notes
-    registry.register(create_note)
-    registry.register(read_note)
-    registry.register(search_notes)
-    registry.register(list_notes)
-    registry.register(delete_note)
+    registry.register(create_note, risk_level="write")
+    registry.register(read_note, risk_level="read")
+    registry.register(search_notes, risk_level="read")
+    registry.register(list_notes, risk_level="read")
+    registry.register(delete_note, risk_level="destructive")
 
     # Outils To-Do
-    registry.register(add_todo)
-    registry.register(list_todos)
-    registry.register(complete_todo)
+    registry.register(add_todo, risk_level="write")
+    registry.register(list_todos, risk_level="read")
+    registry.register(complete_todo, risk_level="write")
 
     return registry

@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Literal
 
 Role = Literal["system", "user", "assistant", "tool"]
+RiskLevel = Literal["read", "write", "destructive"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -15,6 +16,7 @@ class ToolDef:
     description: str
     parameters: dict[str, Any]
     handler: Callable[..., Any]
+    risk_level: RiskLevel = "read"
 
     def to_openai_schema(self) -> dict[str, Any]:
         """Convertit la définition en schéma de fonction standardisé OpenAI/Ollama."""

@@ -9,7 +9,7 @@ import time
 import types
 from typing import Any, Callable, Union, get_args, get_origin
 
-from harness_tools.models import CoercionRecord, ToolDef, ToolResult
+from harness_tools.models import CoercionRecord, RiskLevel, ToolDef, ToolResult
 from harness_tools.tools.coercion import sanitize_arguments
 
 
@@ -105,11 +105,17 @@ def _type_to_json_schema(py_type: Any) -> dict[str, Any]:
     return {"type": "string"}
 
 
-def function_to_tool_def(fn: Callable[..., Any], name: str | None = None, description: str | None = None) -> ToolDef:
+def function_to_tool_def(
+    fn: Callable[..., Any],
+    name: str | None = None,
+    description: str | None = None,
+    risk_level: RiskLevel = "read",
+) -> ToolDef:
     """Construit un ToolDef complet à partir de l'introspection d'une fonction Python."""
     fn_name = name or fn.__name__
     doc_desc, param_docs = _parse_docstring(fn.__doc__)
     fn_desc = description or doc_desc or f"Fonction {fn_name}"
+    effective_risk = getattr(fn, "risk_level", risk_level) if risk_level == "read" else risk_level
 
     try:
         sig = inspect.signature(fn, eval_str=True)
@@ -145,6 +151,7 @@ def function_to_tool_def(fn: Callable[..., Any], name: str | None = None, descri
         description=fn_desc,
         parameters=parameters_schema,
         handler=fn,
+        risk_level=effective_risk,
     )
 
 
@@ -155,9 +162,15 @@ class ToolRegistry:
         self._tools: dict[str, ToolDef] = {}
         self.enable_coercion = enable_coercion
 
-    def register(self, fn: Callable[..., Any], name: str | None = None, description: str | None = None) -> ToolDef:
+    def register(
+        self,
+        fn: Callable[..., Any],
+        name: str | None = None,
+        description: str | None = None,
+        risk_level: RiskLevel = "read",
+    ) -> ToolDef:
         """Enregistre une fonction Python comme outil."""
-        tool_def = function_to_tool_def(fn, name=name, description=description)
+        tool_def = function_to_tool_def(fn, name=name, description=description, risk_level=risk_level)
         self._tools[tool_def.name] = tool_def
         return tool_def
 
