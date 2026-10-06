@@ -14,6 +14,7 @@ os.environ["PYDANTIC_AI_NO_BANNER"] = "1"
 from pydantic_ai import Agent
 from pydantic_ai.models.ollama import OllamaModel
 from pydantic_ai.providers.ollama import OllamaProvider
+from pydantic_ai.settings import ModelSettings
 
 from harness_tools.frameworks import FrameworkRunResult
 from harness_tools.tools.calculator import calculate
@@ -36,9 +37,11 @@ class PydanticAIAdapter:
         model_name: str = "qwen2.5:3b",
         base_url: str = "http://localhost:11434/v1",
         system_prompt: str | None = None,
+        temperature: float = 0.0,
     ) -> None:
         self.model_name = model_name
         self.base_url = base_url
+        self.temperature = temperature
         self.system_prompt = system_prompt or (
             "Tu es un assistant personnel méthodique capable d'enchaîner plusieurs actions pour accomplir des tâches complexes.\n"
             "- Si une tâche requiert des actions ou des informations, utilise TOUJOURS les outils disponibles et n'invente jamais de résultat.\n"
@@ -47,7 +50,11 @@ class PydanticAIAdapter:
         )
 
         self.provider = OllamaProvider(base_url=self.base_url)
-        self.model = OllamaModel(self.model_name, provider=self.provider)
+        self.model = OllamaModel(
+            self.model_name,
+            provider=self.provider,
+            settings=ModelSettings(temperature=self.temperature),
+        )
 
     def _build_agent_with_tracking(self, calls_record: list[str]) -> Agent:
         """Construit une instance fraîche d'Agent Pydantic-AI avec outils tracés."""

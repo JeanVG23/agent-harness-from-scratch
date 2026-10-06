@@ -23,8 +23,10 @@ class OllamaClient:
         host: str = "http://localhost:11434",
         timeout: float = 120.0,
         api_key: str | None = None,
+        temperature: float = 0.0,
     ) -> None:
         self.model = model
+        self.temperature = temperature
         self.host = host.rstrip("/")
         self.timeout = timeout
         self.api_key = api_key
@@ -39,15 +41,19 @@ class OllamaClient:
         self,
         messages: list[Message],
         tools: list[dict[str, Any]] | None = None,
-        temperature: float = 0.0,
+        temperature: float | None = None,
     ) -> Message:
-        """Envoie une liste de messages et des schémas d'outils optionnels à Ollama."""
+        """Envoie une liste de messages et des schémas d'outils optionnels à Ollama.
+
+        `temperature` surcharge, pour cet appel seulement, celle du client (0.0 par défaut).
+        """
+        effective_temperature = self.temperature if temperature is None else temperature
         payload: dict[str, Any] = {
             "model": self.model,
             "messages": [m.to_dict() for m in messages],
             "stream": False,
             "options": {
-                "temperature": temperature,
+                "temperature": effective_temperature,
             },
         }
 

@@ -1,4 +1,8 @@
-"""Script d'évaluation comparative tripartite : Harness Maison vs Smolagents vs Pydantic-AI."""
+"""Script d'évaluation comparative tripartite : Harness Maison vs Smolagents vs Pydantic-AI.
+
+Conservé pour reproduire le comparatif v7. Ne plus l'utiliser pour comparer les runtimes : il ne vérifie
+pas les mots-clés de sortie pour les frameworks et ne fixe pas la température. Voir `run_multi_comparison.py`.
+"""
 
 from __future__ import annotations
 

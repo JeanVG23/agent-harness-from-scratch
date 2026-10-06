@@ -4,6 +4,8 @@ Ce document consigne les résultats chiffrés, l'analyse comparative et les ense
 
 **Portée des conclusions** : un seul run, 7 cas, un seul modèle de 3B, réglages non alignés entre les runtimes (voir section 1). Les chiffres décrivent ce run ; ils ne suffisent pas à classer les trois approches. La section 5 liste ce qui manque pour aller plus loin.
 
+> **Mise à jour** : le [rapport v8](v8-comparatif-repete-holdout-gemma.md) refait cette comparaison à température alignée, avec une notation commune, plusieurs runs, un jeu mis de côté et un modèle de 31 milliards de paramètres (`gemma4:31b`). Plusieurs lectures cas par cas de ce document ne s'y reproduisent pas : pour toute comparaison, utiliser v8.
+
 ---
 
 ## 1. Protocole Expérimental
@@ -120,7 +122,7 @@ Ce tableau mêle des faits mesurés ici et des hypothèses de positionnement qui
 
 ## 5. Limites et suite
 
-* **Échantillon** : 7 cas, 1 modèle, 1 run par framework. Le harness maison a été relancé (verdicts stables), pas Smolagents ni Pydantic-AI : refaire 3 à 5 runs pour chacun et rapporter les médianes et les écarts.
-* **Réglages à aligner** : même `temperature` (0.0) pour les trois runtimes, puis relancer. Les résultats ci-dessus ne sont pas valables pour une comparaison à réglages égaux.
-* **Autre taille de modèle** : tester un modèle de 7B ou plus (par exemple `qwen2.5:7b`) pour vérifier si le classement tient et si les échecs communs viennent bien du modèle.
+* **Échantillon** : 7 cas, 1 modèle, 1 run par framework. Le harness maison a été relancé (verdicts stables), pas Smolagents ni Pydantic-AI : refaire 3 à 5 runs pour chacun et rapporter les médianes et les écarts. *Fait en v8.*
+* **Réglages à aligner** : même `temperature` (0.0) pour les trois runtimes, puis relancer. Les résultats ci-dessus ne sont pas valables pour une comparaison à réglages égaux. *Fait en v8.*
+* **Autre taille de modèle** : tester un modèle de 7B ou plus (par exemple `qwen2.5:7b`) pour vérifier si le classement tient et si les échecs communs viennent bien du modèle. *Fait en v8 avec `gemma4:31b` : tous les cas sont réussis par les trois runtimes.*
 * **Sécurité** : aucun test d'évasion de sandbox n'a été conçu ; les affirmations de sécurité ci-dessus relèvent de l'architecture, pas de la mesure.

@@ -15,31 +15,32 @@ L'objectif est **pédagogique et architectural** : comprendre et implémenter so
 
 ## English summary
 
-A from-scratch **agent harness** (tool-calling loop) and **evaluation harness** in pure Python with zero runtime dependencies, then benchmarked against **Smolagents** and **Pydantic-AI**. Everything runs against small local models through Ollama. Each of the 9 steps is tested, measured and written up in [`experiments/`](experiments/), failures included (the write-ups are in French).
+A from-scratch **agent harness** (tool-calling loop) and **evaluation harness** in pure Python with zero runtime dependencies, then benchmarked against **Smolagents** and **Pydantic-AI**. Everything runs against small local models through Ollama. Each of the 10 steps is tested, measured and written up in [`experiments/`](experiments/), failures included (the write-ups are in French).
 
 **What it covers**: JSON schemas generated from type hints and docstrings, native tool calling vs ReAct prompting, a multi-step loop with repeated-call detection, deterministic argument coercion (no LLM), risk levels (`read` / `write` / `destructive`) with human-in-the-loop approval, and an evaluation harness that checks tool choice, arguments, abstention, final state and answer keywords.
 
-**Key results** (small local models, single runs):
+**Key results** (small local models, mostly single runs; step 10 uses repeated runs):
 
-* Native tool calling was up to **7.3x faster** than ReAct prompting on 3 queries (`qwen3.5:4b`).
+* Native tool calling was faster than ReAct prompting on 2 of 3 queries (up to **7.3x**, a single measurement) and slower on the third (`qwen3.5:4b`).
 * **Deterministic coercion** fixes typing mistakes such as `days="5"` before execution; without it, v2 looped until the safety limit.
 * A human refusal **guarantees the tool is not executed** (checked by unit test and live).
 * **12/12** on the standard 12-case set, but **4/7** on 7 traps designed to break the harness. The first score is flattering, the second is the honest baseline.
-* Against the frameworks (`qwen2.5:3b`, 7 hard cases, one run): **4/7** for the harness, **4/7** for Smolagents, **3/7** for Pydantic-AI. The accuracy gap is not significant. The custom harness has the lowest latency (3.66 s per case vs 28.57 s for Smolagents).
+* Against the frameworks, first pass (`qwen2.5:3b`, 7 hard cases, one run, temperatures not aligned): **4/7** for the harness, **4/7** for Smolagents, **3/7** for Pydantic-AI. That run does not hold up (see next bullet).
+* Step 10 redoes it properly: temperature 0.0 for all three runtimes, one shared scorer, 3 to 5 runs, and an 8-case held-out set. On `qwen2.5:3b`, pooled over 15 cases: **10/15** harness, **9/15** Smolagents, **9/15** Pydantic-AI. No pairwise difference is significant (McNemar p = 1.00) and the ranking flips between the development set (4, 2, 4 out of 7) and the held-out set (6, 7, 5 out of 8). Runs at temperature 0 reproduce the same verdicts every time; at temperature 0.7 (3 runs) the harness scores 10 to 11 out of 15, Smolagents 8 to 10 and Pydantic-AI 6 to 10, with differences inside the noise. On `gemma4:31b` (Ollama cloud), all three runtimes pass every case, so the bench no longer separates them. The custom harness and Pydantic-AI are fast; Smolagents is slower (median 25 s vs 3.1 s per case on the 3B).
 
-**Caveats**: one run per setup, 7 to 12 cases, one 3B model, temperature and prompts not aligned across runtimes, and a dataset written by the harness author. See [the limits section](#5-limites-et-prudence-sur-les-chiffres) (in French) before quoting any number.
+**Caveats**: 15 cases, two models, system prompts and Pydantic-AI retries not aligned across runtimes, and the held-out set was written by the harness author. See [the limits section](#5-limites-et-prudence-sur-les-chiffres) (in French) before quoting any number.
 
-**Quick start**: `uv sync && uv run pytest` (56 tests with the base install, 60 with `uv sync --extra frameworks`). Linting: `uv run ruff check .`.
+**Quick start**: `uv sync && uv run pytest` (87 tests with the base install, 95 with `uv sync --extra frameworks`). Linting: `uv run ruff check .`.
 
 ---
 
 ## Résultats en bref
 
-* **Le tool calling natif vaut-il le ReAct par prompt ?** Sur 3 requêtes (`qwen3.5:4b`), jusqu'à **7,3x plus rapide** (62,3 s contre 8,5 s) et 22 % de latence en moins sur le calcul. *(Étape 3)*
+* **Le tool calling natif vaut-il le ReAct par prompt ?** Sur 3 requêtes (`qwen3.5:4b`), jusqu'à **7,3x plus rapide** (62,3 s contre 8,5 s, une seule mesure) et 22 % de latence en moins sur le calcul, mais **plus lent** sur la requête sans outil (6,35 s contre 9,95 s). *(Étape 3)*
 * **Comment survivre aux erreurs de typage des petits modèles ?** `days="5"` au lieu de `5` faisait boucler le modèle en v2 jusqu'au garde-fou. Une **coercion déterministe, sans LLM**, la corrige avant l'exécution en v3. *(Étape 5)*
 * **Comment empêcher une action destructive ?** Les outils sont classés `read` / `write` / `destructive`. Un refus humain garantit que l'outil **n'est pas exécuté** (la note est préservée, vérifié par test et en live). *(Étape 6)*
 * **Un bon score suffit-il ?** **12/12 (100 %)** sur le banc standard, mais **4/7 (57,1 %)** sur 7 pièges conçus pour casser le harness. Le premier score est flatteur, le second est la baseline honnête. *(Étapes 7 et 8)*
-* **Et face aux frameworks ?** Sur ce banc (`qwen2.5:3b`, 7 cas, un run) : précision comparable (**4/7, 4/7, 3/7**), latence la plus basse pour le harness maison (3,66 s par cas contre 28,57 s pour Smolagents). L'écart de précision n'est pas significatif et les réglages ne sont pas alignés : voir les [limites](#5-limites-et-prudence-sur-les-chiffres). *(Étape 9)*
+* **Et face aux frameworks ?** Premier passage (`qwen2.5:3b`, 7 cas, un run, températures non alignées) : **4/7, 4/7, 3/7**. Refait à température égale avec un jeu mis de côté (étape 10) : **10/15, 9/15, 9/15** sur `qwen2.5:3b`, sans différence significative, et un classement qui s'inverse entre le jeu de développement et le holdout. Sur `gemma4:31b`, les trois runtimes réussissent tous les cas. Smolagents reste nettement plus lent sur le 3B. *(Étapes 9 et 10)*
 
 ---
 
@@ -120,7 +121,7 @@ Ce domaine permet de couvrir :
 
 ---
 
-## 3. Feuille de route des itérations (Étapes 1 à 9)
+## 3. Feuille de route des itérations (Étapes 1 à 10)
 
 Chaque étape fait l'objet d'un rapport documenté et chiffré dans [`experiments/`](experiments/). `vN` désigne la version du harness (de v0 à v4). Les préfixes des fichiers de `experiments/` sont de simples identifiants de rapport : le titre de chaque rapport donne son numéro d'étape.
 
@@ -158,14 +159,20 @@ Chaque étape fait l'objet d'un rapport documenté et chiffré dans [`experiment
   - 📄 Rapport : [`experiments/v6-hard-traps-benchmark.md`](experiments/v6-hard-traps-benchmark.md)
 - [x] **Étape 9 : Comparatif tripartite (Harness maison vs Smolagents vs Pydantic-AI)**
   - Adaptateurs pour **Smolagents (Code Agent)** et **Pydantic-AI (Type-Driven)**, confrontés aux 7 pièges.
-  - Sur ce banc, le harness maison a la latence la plus basse (3.66 s par cas, contre 28.57 s pour Smolagents et 6.96 s pour Pydantic-AI) à précision comparable (4/7, 4/7, 3/7). Un seul run, réglages non alignés : voir les [limites](#5-limites-et-prudence-sur-les-chiffres).
+  - Sur ce banc, le harness maison a la latence la plus basse (3.66 s par cas, contre 28.57 s pour Smolagents et 6.96 s pour Pydantic-AI) à précision comparable (4/7, 4/7, 3/7). Un seul run, réglages non alignés : voir les [limites](#5-limites-et-prudence-sur-les-chiffres). Ces chiffres sont remplacés par ceux de l'étape 10.
   - 📄 Rapports : [`experiments/v6-explication-smolagents-pydantic-ai.md`](experiments/v6-explication-smolagents-pydantic-ai.md) et [`experiments/v7-framework-comparison.md`](experiments/v7-framework-comparison.md)
+- [x] **Étape 10 : Comparatif répété, jeu mis de côté et modèle plus grand**
+  - Température 0.0 alignée, notation commune aux trois runtimes, 3 à 5 runs, jeu holdout de 8 cas écrits avant tout run, et `gemma4:31b` via Ollama cloud.
+  - Sur `qwen2.5:3b` : 10/15, 9/15, 9/15 (harness, Smolagents, Pydantic-AI), sans différence significative. Sur `gemma4:31b` : tous les cas réussis par les trois runtimes (banc saturé).
+  - 📄 Rapport : [`experiments/v8-comparatif-repete-holdout-gemma.md`](experiments/v8-comparatif-repete-holdout-gemma.md)
 
 ---
 
 ## 4. Résultats du comparatif tripartite
 
-Résultats mesurés sur le modèle local `qwen2.5:3b` (Ollama) face aux 7 pièges complexes. **Un seul run ; la température et les prompts ne sont pas alignés entre les trois runtimes** (détails dans le [rapport](experiments/v7-framework-comparison.md)).
+### 4.1 Premier passage (étape 9)
+
+Résultats mesurés sur le modèle local `qwen2.5:3b` (Ollama) face aux 7 pièges complexes. **Un seul run ; la température et les prompts ne sont pas alignés entre les trois runtimes** (détails dans le [rapport](experiments/v7-framework-comparison.md)). Ces chiffres sont remplacés par ceux du 4.2 pour toute comparaison.
 
 | ID Cas                        | Type             | Harness V4 (From-Scratch) | Smolagents (Code Agent) | Pydantic-AI (Type-Driven) |
 | :---------------------------- | :--------------- | :------------------------ | :---------------------- | :------------------------ |
@@ -186,16 +193,32 @@ Résultats mesurés sur le modèle local `qwen2.5:3b` (Ollama) face aux 7 piège
 
 Deux cas sont échoués par les trois runtimes : ils révèlent d'abord les limites du modèle 3B, pas celles d'un runtime en particulier.
 
+### 4.2 Refait à réglages alignés (étape 10)
+
+Température 0.0 pour les trois runtimes, même scorer, jeu de développement (les 7 pièges ci-dessus, 5 runs) et jeu mis de côté (8 cas inédits, 3 runs). À température 0, chaque cas donne le même verdict à chaque run, donc les chiffres ci-dessous sont des nombres de cas réussis.
+
+| Modèle             | Jeu               | Harness V4 | Smolagents | Pydantic-AI |
+| :----------------- | :---------------- | :--------- | :--------- | :---------- |
+| `qwen2.5:3b`       | Développement (7) | 4          | 2          | 4           |
+| `qwen2.5:3b`       | Holdout (8)       | 6          | 7          | 5           |
+| `qwen2.5:3b`       | **Poolé (15)**    | **10**     | **9**      | **9**       |
+| `gemma4:31b-cloud` | Développement (7) | 7          | 7          | 7           |
+| `gemma4:31b-cloud` | Holdout (8)       | 8          | 8          | 8           |
+
+Sur le 3B, aucune comparaison deux à deux n'est significative (test exact de McNemar, p = 1.00 sur les 15 cas), et les intervalles à 95 % se recouvrent largement (par exemple 42 à 85 % pour le harness). Smolagents est le plus lent (latence médiane de 25.0 s par cas contre 3.1 s pour le harness sur le jeu de développement). À température 0.7 (3 runs, 15 cas), les scores par run sont de 10 à 11 pour le harness, 8 à 10 pour Smolagents et 6 à 10 pour Pydantic-AI : la variance d'un run à l'autre est du même ordre que les écarts entre runtimes. Détails, causes d'échec et contrôles dans le [rapport](experiments/v8-comparatif-repete-holdout-gemma.md).
+
 ---
 
 ## 5. Limites et prudence sur les chiffres
 
-* **Petits échantillons** : 7 à 12 cas par banc, un seul modèle local de 3B (`qwen2.5:3b`) ; l'étape 3 utilise `qwen3.5:4b` sur 3 requêtes. Aucun intervalle de confiance : un écart d'un cas n'est pas significatif. Le harness v4 a été relancé 3 fois sur les 7 pièges : mêmes verdicts à chaque run (4/7), mais une durée totale entre 20,9 s et 28,7 s. La précision est stable, la latence l'est moins (environ 30 % d'écart). Smolagents et Pydantic-AI n'ont pas été relancés.
+* **Petits échantillons** : 7 à 12 cas par banc, un seul modèle local de 3B (`qwen2.5:3b`) ; l'étape 3 utilise `qwen3.5:4b` sur 3 requêtes. Aucun intervalle de confiance : un écart d'un cas n'est pas significatif. À température 0, les verdicts sont identiques d'un run à l'autre : répéter les runs mesure la reproductibilité, pas la variance d'échantillonnage. La latence varie (environ 30 % d'écart sur le harness en v7).
+* **Un seul jeu mis de côté, et déjà consommé** : les 8 cas du holdout (étape 10) ont été écrits avant tout run mais par l'auteur du harness, après lecture du jeu de développement. Ils ne peuvent servir qu'une fois : un nouveau holdout est nécessaire pour toute nouvelle mesure.
 * **Bancs écrits par l'auteur du harness** : les 3 cas multi-étapes du dataset standard reprennent, avec d'autres valeurs, les scénarios des étapes 4 et 5 (Budget 2026 devient Facture Pro, 5 jours devient 7 jours, Recette Tarte devient Guide Sécurité). Les 7 pièges ont été ajoutés ensuite pour corriger ce biais.
-* **Comparatif non contrôlé** : le harness tourne à `temperature=0.0`, Smolagents et Pydantic-AI utilisent leurs réglages par défaut, et chaque runtime a son propre prompt système.
+* **Comparatif partiellement contrôlé** : depuis l'étape 10, les trois runtimes tournent à `temperature=0.0` avec le même scorer. Chaque runtime garde son propre prompt système, et Pydantic-AI garde son réglage par défaut de 1 réessai de sortie (8 échecs sur le 3B). Le premier passage de l'étape 9 (températures non alignées, mots-clés de sortie non vérifiés pour les frameworks) ne doit plus servir à comparer.
+* **Banc saturé sur `gemma4:31b`** : les trois runtimes réussissent tous les cas, ce qui ne permet aucun classement à cette taille.
 * **Sécurité** : l'absence d'interpréteur de code dans le harness est une propriété d'architecture. Aucun test d'évasion de sandbox n'a été conçu.
 * **État global** : `notes.py` et `todo.py` stockent leurs données dans des variables de module (simplification pédagogique, non thread-safe).
-* **Suite prévue** : refaire 3 à 5 runs de Smolagents et Pydantic-AI, aligner la température entre les trois runtimes, tester un modèle de 7B ou plus.
+* **Suite prévue** : porter la mesure à T=0.7 de 3 à 5 runs, écrire un jeu plus difficile et un nouveau holdout, aligner les prompts système et les réessais de Pydantic-AI, concevoir un test d'évasion du sandbox de Smolagents.
 
 ---
 
@@ -222,7 +245,7 @@ agent-harness-from-scratch/
 │       │   └── default_tools.py       # Registre par défaut avec 11 outils annotés
 │       ├── llm/
 │       │   ├── __init__.py
-│       │   └── client.py              # Client HTTP standard Ollama
+│       │   └── client.py              # Client HTTP standard Ollama (température configurable)
 │       ├── harness/
 │       │   ├── __init__.py
 │       │   ├── react_v0.py            # Runtime v0 : ReAct prompté + parseur regex
@@ -232,8 +255,9 @@ agent-harness-from-scratch/
 │       │   └── native_v4.py           # Runtime v4 : Gouvernance HITL & Criticité
 │       ├── eval/
 │       │   ├── __init__.py
-│       │   ├── dataset.py             # 19 cas de test formels (12 standards + 7 pièges)
-│       │   └── evaluator.py           # Évaluateur automatisé & vérification d'état mémoire
+│       │   ├── dataset.py             # 27 cas formels : 12 standards, 7 pièges (dev), 8 inédits (holdout)
+│       │   ├── evaluator.py           # Évaluateur, vérification d'état mémoire et scorer commun `score_case`
+│       │   └── multirun.py            # Stockage JSONL et agrégation de runs répétés
 │       └── frameworks/
 │           ├── __init__.py            # Interface FrameworkRunResult unifiée
 │           ├── smolagents_adapter.py  # Wrapper pour Hugging Face Smolagents (CodeAgent)
@@ -242,13 +266,16 @@ agent-harness-from-scratch/
 │   ├── test_client.py                 # Tests unitaires hermétiques du client HTTP
 │   ├── test_coercion.py               # Tests unitaires de la normalisation déterministe
 │   ├── test_evaluator.py              # Tests du banc d'évaluation
+│   ├── test_holdout.py                # Tests du jeu mis de côté et de ses vérifications d'état
 │   ├── test_frameworks.py             # Tests des adaptateurs tiers (ignorés sans l'extra `frameworks`)
+│   ├── test_multirun.py               # Tests de l'agrégation des runs répétés
 │   ├── test_native_v1.py              # Tests du harness v1 (mocks)
 │   ├── test_native_v2.py              # Tests du harness v2 (multi-step & boucles)
 │   ├── test_native_v3.py              # Tests du harness v3 (robustesse & auto-correction)
 │   ├── test_native_v4.py              # Tests du harness v4 (HITL & criticité)
 │   ├── test_react_v0.py               # Tests du harness v0 (mocks)
 │   ├── test_registry.py               # Tests de l'introspection et du registre
+│   ├── test_scoring.py                # Tests du scorer commun aux trois runtimes
 │   └── test_tools.py                  # Tests fonctionnels des outils métiers
 └── experiments/
     ├── v0-tool-introspection.md       # Étape 1 : spécification et benchmark des schémas JSON
@@ -261,7 +288,9 @@ agent-harness-from-scratch/
     ├── v5-evaluation-harness.md       # Étape 7 : évaluation standard (12 cas)
     ├── v6-hard-traps-benchmark.md     # Étape 8 : 7 pièges complexes (Hard Traps)
     ├── v6-explication-smolagents-pydantic-ai.md # Étape 9 (partie 1) : analyse conceptuelle (Mermaid)
-    ├── v7-framework-comparison.md     # Étape 9 (partie 2) : rapport comparatif tripartite
+    ├── v7-framework-comparison.md     # Étape 9 (partie 2) : rapport comparatif tripartite (premier passage)
+    ├── v8-comparatif-repete-holdout-gemma.md # Étape 10 : runs répétés, holdout, température alignée, gemma4:31b
+    ├── results/                       # Données brutes (.jsonl) des campagnes de l'étape 10
     ├── run_v0_sample.py               # Script live v0 (Ollama)
     ├── run_v1_comparison.py           # Benchmark comparatif live v0 vs v1
     ├── run_v2_sample.py               # Test live multi-étapes v2
@@ -269,7 +298,8 @@ agent-harness-from-scratch/
     ├── run_v4_sample.py               # Test live criticité & HITL v4
     ├── run_eval_benchmark.py          # Banc d'évaluation standard (12 cas)
     ├── run_hard_benchmark.py          # Banc d'évaluation des pièges (7 cas)
-    └── run_framework_comparison.py    # Benchmark comparatif tripartite unifié
+    ├── run_framework_comparison.py    # Comparatif tripartite de l'étape 9 (conservé pour v7, ne plus l'utiliser pour comparer)
+    └── run_multi_comparison.py        # Comparatif tripartite répété : N runs, température alignée, dev et holdout
 ```
 
 ---
@@ -279,7 +309,7 @@ agent-harness-from-scratch/
 ### Prérequis
 * Python `>= 3.11`
 * Gestionnaire de paquets [uv](https://docs.astral.sh/uv/) (recommandé)
-* [Ollama](https://ollama.ai/) avec un modèle local (ex. `qwen2.5:3b`) pour exécuter les benchmarks réels.
+* [Ollama](https://ollama.ai/) avec un modèle local (ex. `qwen2.5:3b`) pour exécuter les benchmarks réels. Pour les modèles plus gros de l'étape 10, un compte Ollama connecté donne accès aux modèles cloud (`ollama pull gemma4:31b-cloud`) : aucune clé ni changement d'URL, le serveur local relaie.
 
 ### Installation
 
@@ -295,7 +325,7 @@ uv sync --extra frameworks
 ```
 
 ### Lancer les tests unitaires
-Les tests sont **hermétiques** (aucun serveur LLM ni accès réseau requis). La suite compte 60 tests : 56 s'exécutent en environ une seconde avec l'installation de base, les 4 tests des adaptateurs nécessitent l'extra `frameworks` et sont ignorés sinon.
+Les tests sont **hermétiques** (aucun serveur LLM ni accès réseau requis). La suite compte 95 tests : 87 s'exécutent en environ une seconde avec l'installation de base, les 8 tests des adaptateurs nécessitent l'extra `frameworks` et sont ignorés sinon.
 
 ```bash
 uv run pytest
@@ -317,6 +347,12 @@ uv run python experiments/run_eval_benchmark.py
 # 2. Évaluation des pièges complexes & cas de stress (7 cas)
 uv run python experiments/run_hard_benchmark.py
 
-# 3. Comparatif tripartite en direct (Harness V4 vs Smolagents vs Pydantic-AI, extra `frameworks` requis)
+# 3. Comparatif tripartite répété (Harness V4 vs Smolagents vs Pydantic-AI, extra `frameworks` requis)
+#    Température alignée (0.0 par défaut), jeux « hard » (dev) et « holdout », résultats bruts dans experiments/results/
+uv run python experiments/run_multi_comparison.py --model qwen2.5:3b --runs 3 --dataset both
+uv run python experiments/run_multi_comparison.py --model gemma4:31b-cloud --runs 3 --dataset both
+uv run python experiments/run_multi_comparison.py --report experiments/results/<fichier>.jsonl
+
+# 4. Premier comparatif de l'étape 9 (réglages non alignés, conservé pour reproduire v7)
 uv run python experiments/run_framework_comparison.py --dataset hard
 ```

@@ -42,3 +42,6 @@ secrets/
 GEMINI.md
 AGENTS.md
 .agents/
+
+# Logs bruts des campagnes (les .jsonl restent versionnables)
+experiments/results/*.log

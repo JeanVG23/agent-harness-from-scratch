@@ -52,7 +52,7 @@ sequenceDiagram
 ### Vulnérabilités & Coûts de la v0 :
 1. **Fragilité syntaxique (*Parsing Hell*) :** Si le LLM oublie un guillemet, modifie la casse (`action:` au lieu de `Action:`), ou ajoute du bavardage, la regex échoue.
 2. **Besoin de *Stop Sequences* :** Nécessité absolue de couper la génération (`\nObservation:`) pour empêcher le LLM d'inventer lui-même une fausse observation.
-3. **Surcoût en tokens & latence :** Génération forcée de monologues verbeux ralentissant l'inférence (jusqu'à 7× plus lent sur petit modèle).
+3. **Surcoût en tokens & latence :** Génération forcée de monologues verbeux ralentissant l'inférence (jusqu'à 7× plus lent sur une requête mesurée avec un modèle de 4 milliards de paramètres, mesure unique : voir les réserves de `v1-native-tool-calling.md`).
 
 ---
 

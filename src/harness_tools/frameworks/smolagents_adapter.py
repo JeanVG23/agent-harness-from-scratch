@@ -31,16 +31,19 @@ class SmolagentsAdapter:
         api_base: str = "http://localhost:11434/v1",
         max_steps: int = 8,
         verbosity: int = 0,
+        temperature: float = 0.0,
     ) -> None:
         self.model_id = model_id
         self.api_base = api_base
         self.max_steps = max_steps
         self.verbosity = verbosity
+        self.temperature = temperature
 
         self.model = OpenAIServerModel(
             model_id=self.model_id,
             api_base=self.api_base,
             api_key="ollama",
+            temperature=self.temperature,
         )
 
     def _build_tracked_tools(self, call_tracker: list[str]) -> list[Any]:

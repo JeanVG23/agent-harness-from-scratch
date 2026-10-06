@@ -98,3 +98,29 @@ def test_client_chat_handles_string_arguments(mock_urlopen):
     assert len(res.tool_calls) == 1
     assert res.tool_calls[0].name == "get_current_time"
     assert res.tool_calls[0].arguments == {"timezone": "UTC"}
+
+
+def test_client_temperature_defaults_to_zero_and_can_be_set(monkeypatch):
+    """La température du client part dans la requête ; l'argument de chat() la surcharge."""
+    import json
+    from unittest.mock import MagicMock
+
+    from harness_tools.llm.client import OllamaClient
+    from harness_tools.models import Message
+
+    sent: list[dict] = []
+
+    def fake_urlopen(req, timeout):
+        sent.append(json.loads(req.data))
+        response = MagicMock()
+        response.__enter__.return_value.read.return_value = b'{"message": {"content": "ok"}}'
+        return response
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    msgs = [Message(role="user", content="salut")]
+
+    OllamaClient().chat(msgs)
+    OllamaClient(temperature=0.3).chat(msgs)
+    OllamaClient(temperature=0.3).chat(msgs, temperature=0.9)
+
+    assert [p["options"]["temperature"] for p in sent] == [0.0, 0.3, 0.9]

@@ -48,3 +48,32 @@ def test_pydantic_ai_tool_tracking():
     tools_dict = agent._function_toolset.tools
     assert len(tools_dict) == 11
     assert "create_note" in tools_dict
+
+
+def test_smolagents_temperature_defaults_to_zero_and_reaches_the_request():
+    """La température doit être alignée sur le harness (0.0) et partir dans la requête."""
+    adapter = SmolagentsAdapter()
+    assert adapter.temperature == 0.0
+    kwargs = adapter.model._prepare_completion_kwargs(
+        messages=[{"role": "user", "content": [{"type": "text", "text": "salut"}]}]
+    )
+    assert kwargs["temperature"] == 0.0
+
+
+def test_smolagents_temperature_is_configurable():
+    adapter = SmolagentsAdapter(temperature=0.7)
+    kwargs = adapter.model._prepare_completion_kwargs(
+        messages=[{"role": "user", "content": [{"type": "text", "text": "salut"}]}]
+    )
+    assert kwargs["temperature"] == 0.7
+
+
+def test_pydantic_ai_temperature_defaults_to_zero_and_is_a_model_setting():
+    adapter = PydanticAIAdapter()
+    assert adapter.temperature == 0.0
+    assert adapter.model.settings["temperature"] == 0.0
+
+
+def test_pydantic_ai_temperature_is_configurable():
+    adapter = PydanticAIAdapter(temperature=0.7)
+    assert adapter.model.settings["temperature"] == 0.7

@@ -21,14 +21,18 @@ Mesures réalisées sur la même machine (Mac M4) et le même modèle local (**`
 | Requête | Métrique | v0 (ReAct texte) | v1 (Tool Calling natif) | Gain constaté |
 |---|---|---:|---:|:---:|
 | **1. Calcul** : *« Combien font 14 * 25 ? »* | Étapes<br>Durée | 2 étapes<br>17.71 s | 2 étapes<br>**13.81 s** | **- 22 % de latence** |
-| **2. Date/Heure** : *« Quelle heure est-il actuellement à Paris ? »* | Étapes<br>Durée | 2 étapes<br>62.30 s | 2 étapes<br>**8.48 s** | **7,3× plus rapide** 🚀 |
-| **3. Sans outil** : *« Bonjour, qui es-tu ? »* | Étapes<br>Durée | 1 étape<br>6.35 s | 1 étape<br>9.95 s | Réponse v1 plus complète |
+| **2. Date/Heure** : *« Quelle heure est-il actuellement à Paris ? »* | Étapes<br>Durée | 2 étapes<br>62.30 s | 2 étapes<br>**8.48 s** | **7,3× plus rapide** (une seule mesure) |
+| **3. Sans outil** : *« Bonjour, qui es-tu ? »* | Étapes<br>Durée | 1 étape<br>6.35 s | 1 étape<br>9.95 s | **v1 plus lent** (+ 57 %) |
+
+**À lire avec ces réserves** : une seule mesure par requête, un seul modèle de 4 milliards de paramètres, aucune répétition. Le 62,30 s de la requête 2 peut être une valeur haute, et le natif est **plus lent** sur la requête 3 (6,35 s contre 9,95 s). Dire « jusqu'à 7,3× », avec la condition.
 
 ---
 
 ## 3. Analyse pédagogique des résultats
 
-### 3.1 D'où vient le gain spectaculaire de 7,3× sur la requête 2 ?
+### 3.1 Pourquoi un tel écart sur la requête 2 ?
+*Explication plausible, non isolée par une mesure : une seule exécution, aucune expérience ne sépare la part du monologue, de la relecture et du décodage.*
+
 Dans la version v0 (ReAct texte) :
 1. Le modèle devait rédiger un monologue intérieur verbeux (`Thought: Je dois obtenir l'heure...`).
 2. Après l'observation, on lui renvoyait tout le texte accumulé, l'obligeant à relire ses propres réflexions pour en formuler une autre.

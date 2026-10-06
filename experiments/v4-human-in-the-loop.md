@@ -11,7 +11,7 @@ L'objectif de cette version **v4** est d'introduire une gouvernance stricte bas�
 1. **La classification explicite du risque** des outils (`RiskLevel = "read" | "write" | "destructive"`).
 2. **Une politique configurable d'auto-approbation** (`auto_approve = "read" | "write" | "all"`).
 3. **Une porte d'interception pré-exécution Human-in-the-Loop (HITL)** (`confirmation_handler`).
-4. **La garantie absolue de non-exécution** en cas de refus : l'outil n'est jamais exécuté par le harness, et un retour sans ambiguïté est injecté dans le contexte pour que le LLM adapte sa réponse.
+4. **La non-exécution en cas de refus** : dans le code du harness, l'outil refusé n'est pas exécuté (vérifié par test unitaire et en live sur un cas), et un retour sans ambiguïté est injecté dans le contexte pour que le LLM adapte sa réponse.
 5. **L'observabilité des arbitrages humains** : traçabilité des demandes, approbations et refus (`approvals_requested`, `approvals_granted`, `approvals_rejected`).
 
 ---
@@ -33,8 +33,8 @@ RiskLevel = Literal["read", "write", "destructive"]
 | Politique `auto_approve` | `read` | `write` | `destructive` | Cas d'usage |
 | :--- | :---: | :---: | :---: | :--- |
 | `"all"` | ✅ Auto | ✅ Auto | ✅ Auto | Mode headless / tests d'intégration sans supervision |
-| `"write"` *(défaut)* | ✅ Auto | ✅ Auto | 🛑 **HITL** | Équilibre standard en production (protection des données) |
-| `"read"` | ✅ Auto | 🛑 **HITL** | 🛑 **HITL** | Environnements hautement régulés / zéro confiance |
+| `"write"` *(défaut)* | ✅ Auto | ✅ Auto | 🛑 **HITL** | Réglage par défaut : seules les actions destructives demandent l'accord |
+| `"read"` | ✅ Auto | 🛑 **HITL** | 🛑 **HITL** | Mode le plus restrictif : tout ce qui modifie l'état demande l'accord |
 
 ### C. Gestionnaire de Confirmation & Prompt Didactique de Refus
 Le gestionnaire de confirmation `Callable[[ToolCall, ToolDef], bool]` reçoit l'appel et la définition de l'outil pour donner un contexte complet au validateur (interface console interactive ou callback applicatif).
@@ -103,6 +103,6 @@ Durée : 1.63s
 ---
 
 ## 4. Synthèse Pédagogique
-1. **Le Harness est le gardien de la réalité** : Le LLM formule des intentions (`ToolCall`), mais seul le runtime détient le pouvoir d'effets de bord. Même si un LLM hallucine ou insiste, l'interception HITL garantit une étanchéité totale des systèmes externes.
+1. **Le Harness est le gardien de la réalité** : Le LLM formule des intentions (`ToolCall`), mais seul le runtime détient le pouvoir d'effets de bord. Même si un LLM hallucine ou insiste, un refus humain empêche l'exécution de l'outil concerné. C'est une propriété d'architecture vérifiée sur les cas testés, pas une preuve d'étanchéité : aucun test d'évasion n'a été conçu.
 2. **Le feedback au modèle doit contrecarrer le biais de complétion** : Pour les petits modèles, indiquer simplement un refus ne suffit pas toujours s'ils sont ancrés dans le schéma de la consigne initiale ; stipuler explicitement que la ressource n'a pas bougé permet au LLM de formuler une conclusion honnête et fidèle.
 3. **Zéro sur-ingénierie (YAGNI)** : Le mécanisme repose sur une simple fonction prédicat (`should_request_approval`) et un callback de validation, sans framework lourd ni état caché.
