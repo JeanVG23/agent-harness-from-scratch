@@ -1,13 +1,14 @@
 """Script d'exécution du banc d'évaluation (Evaluation Harness) sur le modèle local avec Ollama."""
 
 import time
+
 from harness_tools.eval.dataset import get_default_eval_dataset
 from harness_tools.eval.evaluator import Evaluator
 from harness_tools.llm.client import OllamaClient
 
 
 def run_benchmark(model: str = "qwen2.5:3b"):
-    print(f"=== BANC D'ÉVALUATION FORMEL (EVALUATION HARNESS) — MODÈLE: {model} ===\n")
+    print(f"=== BANC D'ÉVALUATION FORMEL (EVALUATION HARNESS) | MODÈLE: {model} ===\n")
     client = OllamaClient(model=model, timeout=120.0)
     dataset = get_default_eval_dataset()
     evaluator = Evaluator(client)

@@ -1,4 +1,4 @@
-# Expérience v5 : Banc d'Évaluation Formel (Evaluation Harness) & Métriques Agentiques
+# Étape 7 : Banc d'Évaluation Formel (Evaluation Harness) & Métriques Agentiques
 
 ## 1. Contexte & Objectifs
 Après avoir bâti le moteur d'exécution (Runtime Harness) à travers ses versions successives (v0 à v4), une question scientifique fondamentale se pose :
@@ -53,7 +53,7 @@ Le dataset formalisé dans `src/harness_tools/eval/dataset.py` couvre l'ensemble
 Exécution locale complète via Ollama (`experiments/run_eval_benchmark.py`) :
 
 ```
-=== BANC D'ÉVALUATION FORMEL (EVALUATION HARNESS) — MODÈLE: qwen2.5:3b ===
+=== BANC D'ÉVALUATION FORMEL (EVALUATION HARNESS) | MODÈLE: qwen2.5:3b ===
 
 Lancement de l'évaluation sur 12 cas de test...
 
@@ -86,11 +86,19 @@ Durée totale de la campagne              : 51.53s
 
 ## 5. Analyse Qualitative & Enseignements Pédagogiques
 
-1. **Parfaite étanchéité de l'abstention (100%)** :
+1. **Abstention respectée sur les 3 cas hors-domaine (3/3)** :
    Face à des questions pour lesquelles aucun outil n'existe (météo, bourse, traduction), `qwen2.5:3b` n'a tenté d'appeler aucun outil existant (pas de détournement de `calculate` ou de création intempestive de notes). Il a répondu directement par texte en informant l'utilisateur.
 
 2. **Chaînage multi-étapes déterministe** :
    Le passage d'informations entre étapes fonctionne sans perte : le montant calculé par `calculate` est injecté dans le paramètre de `create_note`, et la date offsetée est transmise à `add_todo`.
 
 3. **Convergence rapide** :
-   Avec une moyenne de **1.83 étapes par cas** et une latence moyenne de **4.29 secondes**, le harness prouve que l'agent va droit au but sans errance ni bavardage excessif.
+   Avec une moyenne de **1.83 étapes par cas** et une latence moyenne de **4.29 secondes**, le harness montre, sur ces 12 cas, que l'agent va droit au but sans errance ni bavardage excessif.
+
+---
+
+## 6. Réserve sur la portée de ce banc
+
+* **Un seul run, un seul modèle de 3B**, et 12 cas : un score de 100 % ne permet pas de généraliser.
+* **Dataset écrit par l'auteur du harness** : les 3 cas multi-étapes reprennent, avec d'autres valeurs, les scénarios sur lesquels le harness a été mis au point aux étapes 4 et 5 (`Budget 2026` devient `Facture Pro`, « dans 5 jours » devient « dans 7 jours », `Recette Tarte` devient `Guide Sécurité`).
+* L'étape 8 ajoute 7 pièges conçus pour casser le harness : le score y tombe à 4/7 (57.1 %). C'est ce second chiffre qui sert de baseline.

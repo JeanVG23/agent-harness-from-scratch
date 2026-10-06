@@ -1,11 +1,9 @@
 """Tests unitaires hermétiques pour l'Harness ReAct v0."""
 
 from unittest.mock import MagicMock
-import pytest
 
 from harness_tools.harness.react_v0 import (
     ReActHarnessV0,
-    _build_system_prompt,
     _parse_react_response,
 )
 from harness_tools.models import Message
@@ -32,7 +30,7 @@ def test_parse_react_final_answer():
         "Thought: J'ai fini mon calcul.\n"
         "Final Answer: Le résultat de 14 * 25 est 350."
     )
-    thought, action, action_input, final_answer = _parse_react_response(text)
+    _thought, action, action_input, final_answer = _parse_react_response(text)
 
     assert action is None
     assert action_input is None
@@ -48,7 +46,7 @@ def test_parse_react_truncates_hallucinated_observation():
         "Thought: Je sais que c'est 4.\n"
         "Final Answer: C'est 4."
     )
-    thought, action, action_input, final_answer = _parse_react_response(text)
+    _thought, action, action_input, final_answer = _parse_react_response(text)
 
     # L'observation hallucinée par le modèle a été coupée avant Final Answer
     assert action == "calculate"

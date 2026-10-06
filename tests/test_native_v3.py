@@ -1,7 +1,6 @@
 """Tests unitaires hermétiques pour le Runtime Agentique Native v3 (Robustesse & Coercion)."""
 
 from unittest.mock import MagicMock
-import pytest
 
 from harness_tools.harness.native_v3 import NativeHarnessV3, format_didactic_error
 from harness_tools.models import Message, ToolCall, ToolResult
@@ -211,6 +210,6 @@ def test_v3_disable_didactic_feedback():
     last_chat_call_args = mock_client.chat.call_args[0]
     sent_messages = last_chat_call_args[0]
     # Le message tool injecté ne doit pas avoir le format enrichi ❌ [Échec
-    tool_msg = [m for m in sent_messages if m.role == "tool"][0]
+    tool_msg = next(m for m in sent_messages if m.role == "tool")
     assert "❌ [Échec d'exécution" not in tool_msg.content
     assert "Conseil d'auto-correction" not in tool_msg.content

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from unittest.mock import MagicMock
-import pytest
 
 from harness_tools.eval.dataset import EvalCase, get_default_eval_dataset
 from harness_tools.eval.evaluator import Evaluator

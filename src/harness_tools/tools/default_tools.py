@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from harness_tools.tools.calculator import calculate
 from harness_tools.tools.clock import calculate_date_offset, get_current_time
-from harness_tools.tools.notes import create_note, delete_note, list_notes, read_note, search_notes
+from harness_tools.tools.notes import (
+    create_note,
+    delete_note,
+    list_notes,
+    read_note,
+    search_notes,
+)
 from harness_tools.tools.registry import ToolRegistry
 from harness_tools.tools.todo import add_todo, complete_todo, list_todos
 

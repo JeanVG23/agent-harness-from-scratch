@@ -1,6 +1,7 @@
 """Script de test en direct pour le Harness ReAct v0 avec Ollama."""
 
 import time
+
 from harness_tools.harness.react_v0 import ReActHarnessV0
 from harness_tools.llm.client import OllamaClient
 from harness_tools.tools.default_tools import create_default_registry
@@ -18,7 +19,7 @@ def run_sample():
         "Bonjour, qui es-tu ?",
     ]
 
-    print(f"=== TEST RE-ACT V0 — MODÈLE: {model} ===\n")
+    print(f"=== TEST RE-ACT V0 | MODÈLE: {model} ===\n")
 
     for i, query in enumerate(test_queries, 1):
         print(f"--- Requête {i} : '{query}' ---")

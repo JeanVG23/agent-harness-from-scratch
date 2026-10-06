@@ -1,4 +1,4 @@
-# Expérience v4 : Niveaux de Criticité, Garde-fous et Human-in-the-Loop (HITL)
+# Étape 6 : Niveaux de Criticité, Garde-fous et Human-in-the-Loop, HITL (harness v4)
 
 ## 1. Contexte & Objectifs Pédagogiques
 Dans les versions précédentes (v1 à v3), le runtime agentique exécutait aveuglément tous les outils demandés par le LLM dès lors que les types et arguments étaient validés. 
@@ -60,7 +60,7 @@ Résultat immédiat : le LLM s'aligne rigoureusement et répond :
 Exécution locale sur `qwen2.5:3b` via Ollama (`experiments/run_v4_sample.py`) :
 
 ```
-=== TEST HARNESS V4 (GARDE-FOUS & HUMAN-IN-THE-LOOP) — MODÈLE: qwen2.5:3b ===
+=== TEST HARNESS V4 (GARDE-FOUS & HUMAN-IN-THE-LOOP) | MODÈLE: qwen2.5:3b ===
 
 --- Scénario 1 : Action Écriture ('write') sous politique auto_approve='write' ---
 Prompt : 'Crée une note 'Idées Vacances' avec le contenu 'Islande et Norvège'.'

@@ -5,7 +5,8 @@ from __future__ import annotations
 import functools
 import os
 import time
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 # Masquer la bannière télémétrique de Pydantic-AI dans les benchmarks
 os.environ["PYDANTIC_AI_NO_BANNER"] = "1"
@@ -17,7 +18,13 @@ from pydantic_ai.providers.ollama import OllamaProvider
 from harness_tools.frameworks import FrameworkRunResult
 from harness_tools.tools.calculator import calculate
 from harness_tools.tools.clock import calculate_date_offset, get_current_time
-from harness_tools.tools.notes import create_note, delete_note, list_notes, read_note, search_notes
+from harness_tools.tools.notes import (
+    create_note,
+    delete_note,
+    list_notes,
+    read_note,
+    search_notes,
+)
 from harness_tools.tools.todo import add_todo, complete_todo, list_todos
 
 

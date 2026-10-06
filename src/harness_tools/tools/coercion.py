@@ -193,8 +193,8 @@ def sanitize_arguments(
                     coerced_value=coerced_val,
                     action=action,
                     detail=(
-                        f"Coercion {type(arg_val).__name__} ({repr(arg_val)}) -> "
-                        f"{type(coerced_val).__name__} ({repr(coerced_val)}) vers '{expected_type}'"
+                        f"Coercion {type(arg_val).__name__} ({arg_val!r}) -> "
+                        f"{type(coerced_val).__name__} ({coerced_val!r}) vers '{expected_type}'"
                     ),
                 )
             )

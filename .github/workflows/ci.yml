@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Installer les dépendances
+        run: uv sync
+
+      - name: Lancer ruff
+        run: uv run ruff check .
+
+  tests:
+    name: Python ${{ matrix.python-version }} (${{ matrix.extras }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
+        extras: [core, frameworks]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      # `core` : aucune dépendance runtime, les tests des adaptateurs sont ignorés.
+      # `frameworks` : Smolagents et Pydantic-AI installés, suite complète.
+      - name: Installer les dépendances
+        run: |
+          if [ "${{ matrix.extras }}" = "frameworks" ]; then
+            uv sync --python ${{ matrix.python-version }} --extra frameworks
+          else
+            uv sync --python ${{ matrix.python-version }}
+          fi
+
+      - name: Lancer les tests
+        run: uv run --python ${{ matrix.python-version }} pytest -q

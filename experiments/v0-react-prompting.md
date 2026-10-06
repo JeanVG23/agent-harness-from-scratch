@@ -1,4 +1,4 @@
-# Expérience v0 — Baseline ReAct par Prompting Textuel
+# Étape 2 : Baseline ReAct par Prompting Textuel (harness v0)
 
 Rapport d'expérience réalisé le 3 octobre 2026.
 
@@ -17,9 +17,9 @@ Dans cette baseline :
 
 - **Modèle testé :** `qwen3.5:4b` (tournant en local sur Mac M4).
 - **Température :** `0.0`.
-- **Harness :** [`ReActHarnessV0`](file:///Users/jeanvangysel/code/website/harness_tools/src/harness_tools/harness/react_v0.py) avec limite de 4 étapes max.
+- **Harness :** [`ReActHarnessV0`](../src/harness_tools/harness/react_v0.py) avec limite de 4 étapes max.
 - **Registre d'outils :** `calculator`, `clock`, `notes`, `todo`.
-- **Script exécuté :** [`experiments/run_v0_sample.py`](file:///Users/jeanvangysel/code/website/harness_tools/experiments/run_v0_sample.py).
+- **Script exécuté :** [`experiments/run_v0_sample.py`](run_v0_sample.py).
 
 ---
 

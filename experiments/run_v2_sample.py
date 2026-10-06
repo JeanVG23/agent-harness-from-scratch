@@ -1,6 +1,7 @@
 """Script de test en direct pour le Harness v2 (Multi-step & Garde-fous) avec Ollama."""
 
 import time
+
 from harness_tools.harness.native_v2 import NativeHarnessV2
 from harness_tools.llm.client import OllamaClient
 from harness_tools.tools.default_tools import create_default_registry
@@ -28,7 +29,7 @@ def run_v2_experiments():
         ),
     ]
 
-    print(f"=== TEST HARNESS V2 (MULTI-STEP) — MODÈLE: {model} ===\n")
+    print(f"=== TEST HARNESS V2 (MULTI-STEP) | MODÈLE: {model} ===\n")
 
     for title, prompt in test_scenarios:
         print(f"--- {title} ---")

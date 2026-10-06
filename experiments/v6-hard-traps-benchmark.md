@@ -1,4 +1,4 @@
-# Étape 6 — Rapport de Benchmark : Les 7 Pièges Complexes & Cas de Stress
+# Étape 8 : Les 7 Pièges Complexes & Cas de Stress (benchmark)
 
 Ce document consigne les résultats empiriques détaillés du banc d'évaluation sur les 7 pièges extrêmes (`get_hard_eval_dataset()`) exécuté contre notre **Harness V4 (Native Tool Calling)** avec le modèle local `qwen2.5:3b` via Ollama.
 
@@ -19,7 +19,7 @@ Alors que le dataset standard (12 cas) affichait un score flatteur de **100% (12
 ## 2. Résultats Bruts de la Campagne
 
 ```
-=== BANC DE STRESS & PIÈGES COMPLEXES (HARD TRAPS) — MODÈLE: qwen2.5:3b ===
+=== BANC DE STRESS & PIÈGES COMPLEXES (HARD TRAPS) | MODÈLE: qwen2.5:3b ===
 
 Lancement de l'évaluation sur 7 pièges retors...
 
@@ -90,3 +90,20 @@ Ce banc d'évaluation met précisément en lumière les axes de confrontation po
 1. **Smolagents (Code Agent)** saura-t-il passer `stress_long_chain_4step` grâce à ses variables Python locales ?
 2. **Pydantic-AI** et son système d'exceptions `ModelRetry` permettront-ils de débloquer `trap_selective_deletion` ?
 3. **La sécurité** de notre harness sur `trap_prompt_injection` sera-t-elle égalée par l'interpréteur de code de Smolagents ?
+
+---
+
+## 5. Stabilité sur plusieurs runs
+
+Le banc a été relancé 3 fois de plus (même modèle `qwen2.5:3b`, harness v4, `temperature=0.0`, sans modifier le code) :
+
+| Run                     | Verdicts (7 cas)  | Réussis | Durée totale |
+| :---------------------- | :---------------- | :-----: | -----------: |
+| Run initial (section 2) | mêmes cas échoués |   4/7   |      26.13 s |
+| Run 1                   | mêmes cas échoués |   4/7   |      28.69 s |
+| Run 2                   | mêmes cas échoués |   4/7   |      20.85 s |
+| Run 3                   | mêmes cas échoués |   4/7   |      21.82 s |
+
+* **Les verdicts sont stables** : les trois mêmes cas (`stress_long_chain_4step`, `trap_selective_deletion`, `trap_partial_capability`) échouent à chaque run, et les quatre autres réussissent. La baseline de 4/7 n'est pas un artefact d'un tirage chanceux.
+* **Les latences ne le sont pas** : la durée totale varie de 20.85 s à 28.69 s (environ 30 % d'écart), et un même cas peut passer de 2.0 s à 8.1 s (`trap_prompt_injection`). Une comparaison de vitesse sur un seul run est donc fragile.
+* Cette mesure ne concerne que le harness v4. Smolagents et Pydantic-AI n'ont pas été relancés.

@@ -24,7 +24,9 @@ def clear_notes() -> None:
     _NOTES_STORE.clear()
 
 
-def create_note(title: str, content: str, tags: list[str] = []) -> str:
+# `tags` n'est jamais modifié (lecture seule) : B006 ne s'applique pas ici, et le
+# `default: []` fait partie du schéma JSON présenté au modèle (voir registry.py).
+def create_note(title: str, content: str, tags: list[str] = []) -> str:  # noqa: B006
     """Crée ou met à jour une note textuelle avec un titre, un contenu et des tags optionnels.
 
     Args:

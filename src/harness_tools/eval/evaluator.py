@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import time
-from typing import Any, Callable
+from dataclasses import dataclass
 
 from harness_tools.eval.dataset import EvalCase
 from harness_tools.harness.native_v4 import NativeHarnessV4
@@ -158,9 +157,10 @@ class Evaluator:
 
         # 3. Vérification des outils interdits / abstention
         abstention_ok = True
-        if case.forbidden_tools:
-            if any(forbidden in called_tools for forbidden in case.forbidden_tools):
-                abstention_ok = False
+        if case.forbidden_tools and any(
+            forbidden in called_tools for forbidden in case.forbidden_tools
+        ):
+            abstention_ok = False
 
         if case.should_abstain and not case.expected_tools and len(called_tools) > 0:
             abstention_ok = False

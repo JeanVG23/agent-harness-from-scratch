@@ -7,7 +7,8 @@ import json
 import re
 import time
 import types
-from typing import Any, Callable, Union, get_args, get_origin
+from collections.abc import Callable
+from typing import Any, Union, get_args, get_origin
 
 from harness_tools.models import CoercionRecord, RiskLevel, ToolDef, ToolResult
 from harness_tools.tools.coercion import sanitize_arguments

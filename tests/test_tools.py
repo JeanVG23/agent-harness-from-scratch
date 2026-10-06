@@ -1,11 +1,16 @@
 """Tests unitaires pour les outils de l'Assistant Personnel."""
 
-import pytest
 from harness_tools.tools.calculator import calculate
 from harness_tools.tools.clock import calculate_date_offset, get_current_time
-from harness_tools.tools.notes import clear_notes, create_note, delete_note, list_notes, read_note, search_notes
+from harness_tools.tools.notes import (
+    clear_notes,
+    create_note,
+    delete_note,
+    list_notes,
+    read_note,
+    search_notes,
+)
 from harness_tools.tools.todo import add_todo, clear_todos, complete_todo, list_todos
-
 
 # === Tests Calculatrice ===
 

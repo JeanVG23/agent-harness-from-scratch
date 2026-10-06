@@ -1,13 +1,14 @@
 """Script d'évaluation des pièges extrêmes et cas de stress (Hard Traps Benchmark)."""
 
 import time
+
 from harness_tools.eval.dataset import get_hard_eval_dataset
 from harness_tools.eval.evaluator import Evaluator
 from harness_tools.llm.client import OllamaClient
 
 
 def run_hard_traps(model: str = "qwen2.5:3b"):
-    print(f"=== BANC DE STRESS & PIÈGES COMPLEXES (HARD TRAPS) — MODÈLE: {model} ===\n")
+    print(f"=== BANC DE STRESS & PIÈGES COMPLEXES (HARD TRAPS) | MODÈLE: {model} ===\n")
     client = OllamaClient(model=model, timeout=120.0)
     dataset = get_hard_eval_dataset()
     evaluator = Evaluator(client)

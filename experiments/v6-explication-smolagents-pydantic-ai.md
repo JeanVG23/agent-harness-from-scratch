@@ -1,4 +1,4 @@
-# Étape 6 — Comparatif Conceptuel : Harness From-Scratch vs Smolagents vs Pydantic-AI
+# Étape 9 (partie 1) : Comparatif Conceptuel, Harness From-Scratch vs Smolagents vs Pydantic-AI
 
 Ce document consigne les fondements théoriques, les flux d'exécution et les compromis d'ingénierie entre notre **Harness V4 construit de zéro** et les deux frameworks majeurs de l'écosystème : **Smolagents (Hugging Face)** et **Pydantic-AI**.
 
@@ -135,7 +135,7 @@ flowchart TD
 
 ## 4. Hypothèses à Valider sur le Benchmark Commun (19 Cas)
 
-Lors de la prochaine étape d'expérimentation, les 3 runtimes seront exécutés sur le même modèle (`qwen2.5:3b`) et le même jeu de données ([`get_full_eval_dataset()`](file:///Users/jeanvangysel/code/website/harness_tools/src/harness_tools/eval/dataset.py#L233)) :
+Lors de la prochaine étape d'expérimentation, les 3 runtimes seront exécutés sur le même modèle (`qwen2.5:3b`) et le même jeu de données ([`get_full_eval_dataset()`](../src/harness_tools/eval/dataset.py#L233)) :
 
 1. **`stress_long_chain_4step`** : Smolagents devrait résoudre nativement ce cas en 1 seule passe de code, là où notre harness et Pydantic-AI nécessitent plusieurs tours séquentiels.
 2. **`trap_selective_deletion`** : Le système de `ModelRetry` de Pydantic-AI permettra-t-il à un modèle 3B de corriger son titre erroné avant de capituler ?

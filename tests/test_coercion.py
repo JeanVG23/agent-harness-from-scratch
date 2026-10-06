@@ -1,7 +1,5 @@
 """Tests unitaires pour la normalisation et la coercion déterministe des arguments."""
 
-import pytest
-from harness_tools.models import CoercionRecord
 from harness_tools.tools.clock import calculate_date_offset
 from harness_tools.tools.coercion import coerce_value, sanitize_arguments
 from harness_tools.tools.registry import ToolRegistry
@@ -130,7 +128,7 @@ def test_coerce_array():
 
 def test_coerce_null_literals():
     for null_val in ("null", "None", "NULL", "none", None):
-        val, mod, err = coerce_value(null_val, "string")
+        val, mod, _err = coerce_value(null_val, "string")
         if null_val is None:
             assert val is None and mod is False
         else:

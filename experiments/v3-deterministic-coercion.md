@@ -1,10 +1,10 @@
-# Expérience v3 — Robustesse, Coercion Déterministe & Auto-Correction Agentique
+# Étape 5 : Robustesse, Coercion Déterministe & Auto-Correction Agentique (harness v3)
 
 Rapport d'expérience réalisé le 5 octobre 2026.
 
 ## 1. Contexte & Problématique observée en v2
 
-Lors de l'expérience v2 ([`v2-multi-step.md`](file:///Users/jeanvangysel/code/website/harness_tools/experiments/v2-multi-step.md)), le scénario de chaînage Date $\rightarrow$ Tâche To-Do avait échoué :
+Lors de l'expérience v2 ([`v2-multi-step.md`](v2-multi-step.md)), le scénario de chaînage Date $\rightarrow$ Tâche To-Do avait échoué :
 ```
 Instruction : "Quelle est la date dans 5 jours et ajoute une tâche 'Rapport IA' avec cette date d'échéance."
 Échec v2 : calculate_date_offset(days="5")
@@ -51,16 +51,16 @@ Pour garantir la résilience du runtime sans introduire de dépendance externe l
                                         Tour k+1 : Auto-Correction
 ```
 
-### Pilier 1 : Normalisation Déterministe ([`coercion.py`](file:///Users/jeanvangysel/code/website/harness_tools/src/harness_tools/tools/coercion.py))
+### Pilier 1 : Normalisation Déterministe ([`coercion.py`](../src/harness_tools/tools/coercion.py))
 - **Entiers stricts (`integer`)** : `"5"` $\rightarrow$ `5`, `"5.0"` $\rightarrow$ `5` (vérifié via `.is_integer()`), rejet de `5.5` (refus de la troncature silencieuse pour éviter la corruption sémantique) et de `"cinq"`, rejet des booléens (`True`/`False`).
 - **Booléens stricts (`boolean`)** : Neutralisation du piège Python `bool("false") == True`. Validation explicite de `"true"`/`"1"`/`1` et `"false"`/`"0"`/`0`.
 - **Désérialisation de listes (`array`)** : Parsing JSON direct des chaînes de tableaux : `'["ia", "cours"]'` $\rightarrow$ `["ia", "cours"]`.
 - **Nettoyage des littéraux nuls** : `"null"`, `"None"` $\rightarrow$ `None`.
 - **Nettoyage des octets nuls** : Suppression déterministe des `\x00` dans les chaînes pour protéger les bibliothèques C sous-jacentes (`ZoneInfo`, `open`).
 - **Filtrage des paramètres hallucinés (`drop_unexpected`)** : Retrait automatique des clés superflues (`thought`, `comment`) générées par les modèles.
-- **Auditabilité totale** : Chaque modification produit un [`CoercionRecord`](file:///Users/jeanvangysel/code/website/harness_tools/src/harness_tools/models.py).
+- **Auditabilité totale** : Chaque modification produit un [`CoercionRecord`](../src/harness_tools/models.py).
 
-### Pilier 2 : Boucle Réflexive d'Auto-Correction ([`native_v3.py`](file:///Users/jeanvangysel/code/website/harness_tools/src/harness_tools/harness/native_v3.py))
+### Pilier 2 : Boucle Réflexive d'Auto-Correction ([`native_v3.py`](../src/harness_tools/harness/native_v3.py))
 Lorsqu'une erreur survient (coercion impossible ou ressource inexistante) :
 - `format_didactic_error()` structure la réponse transmise au modèle avec :
   1. Le diagnostic précis de l'échec.
@@ -70,9 +70,9 @@ Lorsqu'une erreur survient (coercion impossible ou ressource inexistante) :
 
 ---
 
-## 4. Résultats Expérimentaux en Direct (Banc Ollama — Modèle `qwen2.5:3b`)
+## 4. Résultats Expérimentaux en Direct (Banc Ollama, modèle `qwen2.5:3b`)
 
-Script d'exécution : [`experiments/run_v3_sample.py`](file:///Users/jeanvangysel/code/website/harness_tools/experiments/run_v3_sample.py)
+Script d'exécution : [`experiments/run_v3_sample.py`](run_v3_sample.py)
 Empreinte mémoire : 1.9 Go | Vitesse d'inférence globale : **34.38s pour les 3 scénarios**.
 
 ### Scénario 1 : Chaînage nominal Calcul $\rightarrow$ Note

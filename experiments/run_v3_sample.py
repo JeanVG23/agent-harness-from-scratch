@@ -1,6 +1,7 @@
 """Script de test en direct pour le Harness v3 (Robustesse, Coercion Déterministe & Auto-Correction) avec Ollama."""
 
 import time
+
 from harness_tools.harness.native_v3 import NativeHarnessV3
 from harness_tools.llm.client import OllamaClient
 from harness_tools.tools.default_tools import create_default_registry
@@ -38,7 +39,7 @@ def run_v3_experiments(model: str = "qwen2.5:3b"):
         ),
     ]
 
-    print(f"=== TEST HARNESS V3 (ROBUSTESSE & AUTO-CORRECTION) — MODÈLE: {model} ===\n")
+    print(f"=== TEST HARNESS V3 (ROBUSTESSE & AUTO-CORRECTION) | MODÈLE: {model} ===\n")
 
     for title, prompt in test_scenarios:
         print(f"--- {title} ---")

@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Literal
+from typing import Any, Literal
 
 Role = Literal["system", "user", "assistant", "tool"]
 RiskLevel = Literal["read", "write", "destructive"]

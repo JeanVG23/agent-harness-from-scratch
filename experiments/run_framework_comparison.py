@@ -6,7 +6,12 @@ import argparse
 import time
 from typing import Any
 
-from harness_tools.eval.dataset import EvalCase, get_default_eval_dataset, get_full_eval_dataset, get_hard_eval_dataset
+from harness_tools.eval.dataset import (
+    EvalCase,
+    get_default_eval_dataset,
+    get_full_eval_dataset,
+    get_hard_eval_dataset,
+)
 from harness_tools.eval.evaluator import _apply_setup, _check_state
 from harness_tools.frameworks.pydantic_ai_adapter import PydanticAIAdapter
 from harness_tools.frameworks.smolagents_adapter import SmolagentsAdapter
@@ -68,9 +73,8 @@ def evaluate_runner_case(
 
     # 2. Abstention / Outils interdits
     abstention_ok = True
-    if case.forbidden_tools:
-        if any(f in tools_called for f in case.forbidden_tools):
-            abstention_ok = False
+    if case.forbidden_tools and any(f in tools_called for f in case.forbidden_tools):
+        abstention_ok = False
 
     if case.should_abstain and not case.expected_tools and len(tools_called) > 0:
         abstention_ok = False
@@ -95,7 +99,7 @@ def evaluate_runner_case(
 
 
 def run_benchmark(dataset_type: str = "hard", model_name: str = "qwen2.5:3b") -> None:
-    print(f"=== GRAND COMPARATIF TRIPARTITE — MODÈLE: {model_name} ===")
+    print(f"=== GRAND COMPARATIF TRIPARTITE | MODÈLE: {model_name} ===")
     print(f"Suite sélectionnée : {dataset_type.upper()}\n")
 
     if dataset_type == "hard":

@@ -8,13 +8,13 @@ Ce document synthétise les différences architecturales et mécaniques entre l'
 
 Avant d'examiner les flux, rappelons la frontière d'exécution :
 * **Le LLM (Ollama) :** Est un système *stateless* (sans état) qui génère des tokens probables. Il n'a **aucun terminal**, aucun accès réseau direct, et ne peut exécuter aucune ligne de code.
-* **Le Harness (notre runtime Python local) :** Est le moteur exécutif. Il détient les fonctions Python réelles ([`clock.py`](file:///Users/jeanvangysel/code/website/harness_tools/src/harness_tools/tools/clock.py), [`calculator.py`](file:///Users/jeanvangysel/code/website/harness_tools/src/harness_tools/tools/calculator.py), [`notes.py`](file:///Users/jeanvangysel/code/website/harness_tools/src/harness_tools/tools/notes.py), [`todo.py`](file:///Users/jeanvangysel/code/website/harness_tools/src/harness_tools/tools/todo.py)), appelle l'API d'Ollama, valide les données, exécute les calculs en mémoire et réinjecte l'information.
+* **Le Harness (notre runtime Python local) :** Est le moteur exécutif. Il détient les fonctions Python réelles ([`clock.py`](../src/harness_tools/tools/clock.py), [`calculator.py`](../src/harness_tools/tools/calculator.py), [`notes.py`](../src/harness_tools/tools/notes.py), [`todo.py`](../src/harness_tools/tools/todo.py)), appelle l'API d'Ollama, valide les données, exécute les calculs en mémoire et réinjecte l'information.
 
 ---
 
 ## 2. Diagramme de Séquence : v0 (ReAct Prompté)
 
-Dans la version v0 ([`react_v0.py`](file:///Users/jeanvangysel/code/website/harness_tools/src/harness_tools/harness/react_v0.py)), tout repose sur du **texte brut** et du **parsing par expressions régulières (Regex)**.
+Dans la version v0 ([`react_v0.py`](../src/harness_tools/harness/react_v0.py)), tout repose sur du **texte brut** et du **parsing par expressions régulières (Regex)**.
 
 ```mermaid
 sequenceDiagram
@@ -58,7 +58,7 @@ sequenceDiagram
 
 ## 3. Diagramme de Séquence : v1 (Tool Calling Natif 1-Shot)
 
-Dans la version v1 ([`native_v1.py`](file:///Users/jeanvangysel/code/website/harness_tools/src/harness_tools/harness/native_v1.py)), les outils sont déclarés via le paramètre officiel `tools` de l'API HTTP, et le modèle répond avec des structures de données typées.
+Dans la version v1 ([`native_v1.py`](../src/harness_tools/harness/native_v1.py)), les outils sont déclarés via le paramètre officiel `tools` de l'API HTTP, et le modèle répond avec des structures de données typées.
 
 ```mermaid
 sequenceDiagram
@@ -95,7 +95,7 @@ sequenceDiagram
 
 ## 4. Diagramme de Séquence : v2 (Chaînage Multi-Étapes & Passage de Données)
 
-Dans la version v2 ([`native_v2.py`](file:///Users/jeanvangysel/code/website/harness_tools/src/harness_tools/harness/native_v2.py)), le harness orchestre des **trajectoires séquentielles** où le résultat d'un premier outil est réinjecté pour alimenter les paramètres d'un second outil.
+Dans la version v2 ([`native_v2.py`](../src/harness_tools/harness/native_v2.py)), le harness orchestre des **trajectoires séquentielles** où le résultat d'un premier outil est réinjecté pour alimenter les paramètres d'un second outil.
 
 ```mermaid
 sequenceDiagram
@@ -212,7 +212,7 @@ flowchart TD
 
 ## 7. Synthèse Comparative des 3 Versions
 
-| Dimension | v0 — ReAct Textuel | v1 — Tool Calling Natif | v2 — Multi-Étapes & Garde-Fous |
+| Dimension | v0 : ReAct Textuel | v1 : Tool Calling Natif | v2 : Multi-Étapes & Garde-Fous |
 |---|---|---|---|
 | **Protocole d'échange** | Texte libre + Regex | API `tools: [...]` + grammaires JSON | API `tools: [...]` + grammaires JSON |
 | **Type de trajectoire** | 1 action basique | 1 action optimisée | **Multi-actions en cascade** (donnée $T_1 \to T_2$) |

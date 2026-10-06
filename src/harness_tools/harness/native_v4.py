@@ -2,14 +2,22 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import json
 import sys
 import time
-from typing import Any, Callable, Literal
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from typing import Any, Literal
 
 from harness_tools.llm.client import OllamaClient
-from harness_tools.models import CoercionRecord, Message, RiskLevel, ToolCall, ToolDef, ToolResult
+from harness_tools.models import (
+    CoercionRecord,
+    Message,
+    RiskLevel,
+    ToolCall,
+    ToolDef,
+    ToolResult,
+)
 from harness_tools.tools.registry import ToolRegistry
 
 

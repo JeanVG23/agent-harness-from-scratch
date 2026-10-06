@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import json
 import re
+from dataclasses import dataclass, field
 from typing import Any
 
 from harness_tools.llm.client import OllamaClient
@@ -94,10 +94,7 @@ def _parse_react_response(text: str) -> tuple[str, str | None, dict[str, Any] | 
         raw_input = re.sub(r"\s*```$", "", raw_input).strip()
         try:
             parsed = json.loads(raw_input)
-            if isinstance(parsed, dict):
-                action_input = parsed
-            else:
-                action_input = {"_raw": parsed}
+            action_input = parsed if isinstance(parsed, dict) else {"_raw": parsed}
         except json.JSONDecodeError:
             # Si le modèle a omis les accolades autour d'une clé-valeur
             if ":" in raw_input and not raw_input.startswith("{"):
@@ -128,7 +125,7 @@ class ReActHarnessV0:
 
         steps: list[ReActStep] = []
 
-        for step_idx in range(max_steps):
+        for _ in range(max_steps):
             response = self.client.chat(messages, tools=None)
             response_text = response.content or ""
 

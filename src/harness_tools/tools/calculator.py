@@ -5,7 +5,8 @@ from __future__ import annotations
 import ast
 import math
 import operator
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 # Opérateurs arithmétiques autorisés
 _OPERATORS: dict[type[ast.AST], Callable[..., Any]] = {

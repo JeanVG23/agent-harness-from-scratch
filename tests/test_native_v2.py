@@ -1,12 +1,11 @@
 """Tests unitaires hermétiques pour l'Harness Native v2 (Multi-step & Anti-boucle)."""
 
 from unittest.mock import MagicMock
-import pytest
 
 from harness_tools.harness.native_v2 import NativeHarnessV2, _compute_call_fingerprint
 from harness_tools.models import Message, ToolCall
 from harness_tools.tools.calculator import calculate
-from harness_tools.tools.notes import clear_notes, create_note, read_note, search_notes
+from harness_tools.tools.notes import clear_notes, create_note, search_notes
 from harness_tools.tools.registry import ToolRegistry
 
 

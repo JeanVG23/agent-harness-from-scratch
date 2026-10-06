@@ -1,11 +1,15 @@
 """Tests unitaires pour ToolRegistry et l'introspection automatique des schémas JSON."""
 
-import pytest
 from harness_tools.models import ToolResult
 from harness_tools.tools.registry import ToolRegistry, function_to_tool_def
 
 
-def dummy_func(city: str, count: int = 5, verbose: bool = False, tags: list[str] = []) -> str:
+def dummy_func(
+    city: str,
+    count: int = 5,
+    verbose: bool = False,
+    tags: list[str] = [],  # noqa: B006 (le défaut alimente le schéma testé)
+) -> str:
     """Recherche des lieux dans une ville donnée.
 
     Args:

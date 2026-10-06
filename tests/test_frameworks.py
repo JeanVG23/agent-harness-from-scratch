@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
 import pytest
 
-from harness_tools.frameworks import FrameworkRunResult
+# Les frameworks tiers sont des dépendances optionnelles (extra `frameworks`).
+pytest.importorskip("smolagents")
+pytest.importorskip("pydantic_ai")
+
 from harness_tools.frameworks.pydantic_ai_adapter import PydanticAIAdapter
 from harness_tools.frameworks.smolagents_adapter import SmolagentsAdapter
 

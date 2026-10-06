@@ -1,4 +1,4 @@
-# Expérience v2 — Enchaînement Multi-Étapes & Garde-fous Anti-Boucle
+# Étape 4 : Enchaînement Multi-Étapes & Garde-fous Anti-Boucle (harness v2)
 
 Rapport d'expérience réalisé le 3 octobre 2026.
 
@@ -13,7 +13,7 @@ Rapport d'expérience réalisé le 3 octobre 2026.
 
 ## 2. Implémentation du Garde-Fou (Harness v2)
 
-Dans [`native_v2.py`](file:///Users/jeanvangysel/code/website/harness_tools/src/harness_tools/harness/native_v2.py) :
+Dans [`native_v2.py`](../src/harness_tools/harness/native_v2.py) :
 - **Empreinte canonique (*Call Fingerprint*) :** Pour chaque appel d'outil, on calcule `hash(name, json_trié(args))`.
 - **Avertissement préventif :** Si une empreinte se répète 2 fois consécutivement, un avertissement système est greffé au résultat de l'outil pour inciter le modèle à changer de stratégie.
 - **Coupure de sécurité :** Si la répétition persiste au-delà du seuil (`max_repeated_calls = 2`), le harness coupe l'exécution immédiatement (`loop_detected = True`) sans gaspiller le reste des étapes autorisées.

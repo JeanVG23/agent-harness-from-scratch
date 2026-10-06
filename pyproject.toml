@@ -4,16 +4,30 @@ version = "0.1.0"
 description = "Harness et Tool Calling construits à la main en Python, avec banc d'évaluation et comparatif"
 readme = "README.md"
 license = "MIT"
+authors = [{ name = "Jean Van Gysel" }]
+keywords = ["llm", "agents", "tool-calling", "evaluation", "ollama"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 requires-python = ">=3.11"
 dependencies = []
 
+[project.urls]
+Repository = "https://github.com/JeanVG23/agent-harness-from-scratch"
+
 [project.optional-dependencies]
+frameworks = [
+    "smolagents>=1.26,<2",
+    "pydantic-ai>=2.52,<3",
+]
+
+[dependency-groups]
 dev = [
     "pytest>=8.0.0",
-]
-frameworks = [
-    "smolagents>=1.0.0",
-    "pydantic-ai>=0.0.1",
+    "ruff>=0.16,<0.17",
 ]
 
 [build-system]
@@ -26,3 +40,13 @@ packages = ["src/harness_tools"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.ruff]
+target-version = "py311"
+
+[tool.ruff.lint]
+# E/F : erreurs de base ; I : tri des imports ; UP : syntaxe moderne ;
+# B : bugs probables ; SIM : simplifications ; RUF : règles propres à Ruff.
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+# E501 : les longues lignes sont des prompts et des docstrings en français.
+ignore = ["E501"]

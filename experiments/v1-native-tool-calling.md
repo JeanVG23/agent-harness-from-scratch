@@ -1,4 +1,4 @@
-# Expérience v1 — Tool Calling Natif d'API (Ollama / OpenAI)
+# Étape 3 : Tool Calling Natif d'API, Ollama / OpenAI (harness v1)
 
 Rapport d'expérience réalisé le 3 octobre 2026.
 
@@ -8,7 +8,7 @@ Remplacer la baseline ReAct par prompting textuel (v0) par une implémentation t
 
 Dans cette version :
 - Aucun format ReAct textuel (`Thought:`, `Action:`, etc.) n'est imposé dans le system prompt.
-- Les outils sont déclarés via le paramètre API officiel `tools: [...]` généré automatiquement par notre [`ToolRegistry`](file:///Users/jeanvangysel/code/website/harness_tools/src/harness_tools/tools/registry.py).
+- Les outils sont déclarés via le paramètre API officiel `tools: [...]` généré automatiquement par notre [`ToolRegistry`](../src/harness_tools/tools/registry.py).
 - Le modèle renvoie des objets structurés `tool_calls`.
 - Le harness exécute le code Python et réinjecte la réponse avec le rôle officiel `{role: "tool", content: ...}`.
 
@@ -51,7 +51,7 @@ Dans la version v1 (Tool Calling natif) :
 
 Nos deux tests (v0 et v1) ont validé le cas nominal à **1 outil simple**.
 
-Dans l'**Étape 3 / v2**, nous devons confronter le harness à des scénarios plus exigeants :
+Dans l'**Étape 4 (harness v2)**, nous devons confronter le harness à des scénarios plus exigeants :
 1. **Dépendances multi-étapes séquentielles :**
    - *« Calcule 15 * 12, puis crée une note intitulée 'Budget' avec ce résultat. »* (Outil 1 : `calculate` $\rightarrow$ Outil 2 : `create_note`).
    - *« Quelle est la date dans 5 jours et ajoute une tâche 'Rapport' pour cette échéance. »* (Outil 1 : `calculate_date_offset` $\rightarrow$ Outil 2 : `add_todo`).

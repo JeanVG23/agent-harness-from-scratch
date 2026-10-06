@@ -1,7 +1,6 @@
 """Tests unitaires hermétiques pour l'Harness Native Tool Calling v1."""
 
 from unittest.mock import MagicMock
-import pytest
 
 from harness_tools.harness.native_v1 import NativeHarnessV1
 from harness_tools.models import Message, ToolCall

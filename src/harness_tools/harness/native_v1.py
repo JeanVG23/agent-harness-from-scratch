@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import time
-from typing import Any
+from dataclasses import dataclass, field
 
 from harness_tools.llm.client import OllamaClient
 from harness_tools.models import Message, ToolCall, ToolResult

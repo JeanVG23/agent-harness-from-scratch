@@ -1,4 +1,4 @@
-# Étape 1 — Socle, Introspection & Définition des Outils
+# Étape 1 : Socle, Introspection & Définition des Outils
 
 Rapport technique rédigé le 1er octobre 2026.
 

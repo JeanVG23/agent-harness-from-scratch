@@ -3,10 +3,8 @@
 from __future__ import annotations
 
 from unittest.mock import MagicMock
-import pytest
 
 from harness_tools.harness.native_v4 import (
-    ApprovalRecord,
     NativeHarnessV4,
     should_request_approval,
 )
@@ -171,7 +169,7 @@ def test_v4_destructive_operation_rejected():
 
     # Vérification du message tool envoyé au LLM
     second_chat_call_messages = client.chat.call_args_list[1][0][0]
-    tool_message = [m for m in second_chat_call_messages if m.role == "tool"][0]
+    tool_message = next(m for m in second_chat_call_messages if m.role == "tool")
     assert "refusée" in tool_message.content or "annulée" in tool_message.content
     assert result.steps[0].approvals[0].approved is False
 

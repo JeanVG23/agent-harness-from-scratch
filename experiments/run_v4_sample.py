@@ -1,6 +1,7 @@
 """Script d'expérimentation en direct pour le Harness v4 (Garde-fous & Human-in-the-Loop) avec Ollama."""
 
 import time
+
 from harness_tools.harness.native_v4 import NativeHarnessV4
 from harness_tools.llm.client import OllamaClient
 from harness_tools.models import ToolCall, ToolDef
@@ -13,7 +14,7 @@ def run_v4_experiments(model: str = "qwen2.5:3b"):
     client = OllamaClient(model=model, timeout=120.0)
     registry = create_default_registry()
 
-    print(f"=== TEST HARNESS V4 (GARDE-FOUS & HUMAN-IN-THE-LOOP) — MODÈLE: {model} ===\n")
+    print(f"=== TEST HARNESS V4 (GARDE-FOUS & HUMAN-IN-THE-LOOP) | MODÈLE: {model} ===\n")
 
     # Scénario 1 : Création de note (Action 'write' sous auto_approve='write' -> aucune confirmation)
     clear_notes()

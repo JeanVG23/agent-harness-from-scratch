@@ -2,9 +2,8 @@
 
 import json
 from unittest.mock import MagicMock, patch
-import pytest
 
-from harness_tools.llm.client import LLMError, OllamaClient
+from harness_tools.llm.client import OllamaClient
 from harness_tools.models import Message, ToolCall
 
 

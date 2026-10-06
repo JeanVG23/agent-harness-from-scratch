@@ -1,6 +1,7 @@
 """Script de test comparatif en direct : Native Tool Calling v1 avec Ollama."""
 
 import time
+
 from harness_tools.harness.native_v1 import NativeHarnessV1
 from harness_tools.llm.client import OllamaClient
 from harness_tools.tools.default_tools import create_default_registry
@@ -18,7 +19,7 @@ def run_comparison():
         "Bonjour, qui es-tu ?",
     ]
 
-    print(f"=== TEST NATIVE TOOL CALLING V1 — MODÈLE: {model} ===\n")
+    print(f"=== TEST NATIVE TOOL CALLING V1 | MODÈLE: {model} ===\n")
 
     for i, query in enumerate(test_queries, 1):
         print(f"--- Requête {i} : '{query}' ---")
