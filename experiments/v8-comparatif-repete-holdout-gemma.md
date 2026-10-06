@@ -58,7 +58,7 @@ Le harness V4 a été développé contre les suites standard et hard : ses score
 | `holdout_independent_calls`        | Heure à Tokyo et à New York, plus un calcul, sans dépendance entre eux         |
 | `holdout_conditional_branch`       | Si la note existe, ajouter une tâche ; ne pas écraser la note existante        |
 
-**Limite d'indépendance** : c'est moi qui ai écrit ces cas, après avoir lu le jeu dev et les échecs du harness. Le jeu est « de côté » au sens où rien n'a été réglé dessus, pas au sens où un tiers l'aurait conçu.
+**Limite d'indépendance** : ces cas ont été écrits dans le projet, après lecture du jeu dev et des échecs du harness. Le jeu est « de côté » au sens où rien n'a été réglé dessus, pas au sens où un tiers l'aurait conçu.
 
 ---
 

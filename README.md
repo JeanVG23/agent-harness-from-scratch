@@ -1,4 +1,4 @@
-# Harness & Tools construits à la main
+# Harness & Tools construits sans framework
 
 [![CI](https://github.com/JeanVG23/agent-harness-from-scratch/actions/workflows/ci.yml/badge.svg)](https://github.com/JeanVG23/agent-harness-from-scratch/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
@@ -7,7 +7,9 @@
 
 Un moteur d'exécution d'outils pour LLM (**Agent Harness**) et son banc d'évaluation (**Evaluation Harness**), écrits de zéro en Python avec la seule bibliothèque standard, puis confrontés à **Smolagents** et **Pydantic-AI**. Chaque étape est testée, chiffrée et documentée dans [`experiments/`](experiments/), échecs compris.
 
-L'objectif est **pédagogique et architectural** : comprendre et implémenter soi-même les mécanismes fondamentaux (introspection des fonctions, génération de schémas JSON, boucle agentique, gestion d'erreurs, abstention, garde-fous) **sans framework**, avant de comparer le résultat à des outils existants.
+L'objectif est **pédagogique et architectural** : comprendre les mécanismes fondamentaux (introspection des fonctions, génération de schémas JSON, boucle agentique, gestion d'erreurs, abstention, garde-fous) en les construisant **sans framework**, avant de comparer le résultat à des outils existants.
+
+**Méthode de travail.** Je n'ai pas écrit le code de ce dépôt : il a été écrit par un assistant IA, sous ma direction. Ma part est la conception (architecture, découpage en étapes, un rapport chiffré par version), les décisions d'évaluation et d'itération, le suivi de chaque version et la lecture critique des mesures. Dans les rapports d'`experiments/`, le « je » désigne l'auteur du projet, qui en a dirigé la conception et la relecture ; le code, lui, est celui de l'assistant.
 
 **Accès rapide** : [English summary](#english-summary) · [Résultats en bref](#résultats-en-bref) · [Exemple](#exemple-dusage) · [Architecture](#architecture-de-la-boucle-v4) · [Limites](#5-limites-et-prudence-sur-les-chiffres) · [Démarrage rapide](#7-démarrage-rapide)
 
@@ -15,7 +17,7 @@ L'objectif est **pédagogique et architectural** : comprendre et implémenter so
 
 ## English summary
 
-A from-scratch **agent harness** (tool-calling loop) and **evaluation harness** in pure Python with zero runtime dependencies, then benchmarked against **Smolagents** and **Pydantic-AI**. Everything runs against small local models through Ollama. Each of the 10 steps is tested, measured and written up in [`experiments/`](experiments/), failures included (the write-ups are in French).
+A from-scratch **agent harness** (tool-calling loop) and **evaluation harness** in pure Python with zero runtime dependencies, then benchmarked against **Smolagents** and **Pydantic-AI**. Measurements run against small local models through Ollama (step 10 adds one larger cloud model). **Authorship**: I did not write the code, an AI assistant did, under my direction; my part is the design, the evaluation decisions and the critical reading of the results. Each of the 10 steps is tested, measured and written up in [`experiments/`](experiments/), failures included (the write-ups are in French).
 
 **What it covers**: JSON schemas generated from type hints and docstrings, native tool calling vs ReAct prompting, a multi-step loop with repeated-call detection, deterministic argument coercion (no LLM), risk levels (`read` / `write` / `destructive`) with human-in-the-loop approval, and an evaluation harness that checks tool choice, arguments, abstention, final state and answer keywords.
 
